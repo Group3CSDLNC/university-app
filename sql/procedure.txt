@@ -1,0 +1,19 @@
+USE [UniversityApp]
+GO
+
+/****** Object:  StoredProcedure [dbo].[sp_GetAllKhoa]    Script Date: 9/3/2025 9:42:27 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[sp_GetAllKhoa]
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT MaKhoa, TenKhoa, Email
+    FROM khoa
+    ORDER BY MaKhoa;
+END
+GO

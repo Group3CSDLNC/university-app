@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="layout :: layout (~{::body})">
+  <div th:fragment="content">
+    <h2>Danh sách Sinh viên - Chuyên ngành <span th:text="${maCN}"></span></h2>
+    <table class="table table-bordered">
+      <thead><tr><th>MaSV</th><th>HoTen</th><th>NgaySinh</th><th>Email</th></tr></thead>
+      <tbody>
+        <tr th:each="s : ${sinhviens}">
+          <td th:text="${s.maSV}">1</td>
+          <td th:text="${s.hoTen}">Nguyen Van A</td>
+          <td th:text="${s.ngaySinh}">2003-01-01</td>
+          <td th:text="${s.email}">a@sv.edu</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</html>
