@@ -4,6 +4,7 @@ import com.example.university.model.HocPhan;
 import com.example.university.repository.HocPhanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,12 +25,12 @@ public class HocPhanService {
 
     public void deleteHocPhan(int maHP) {
         try {
-            repo.delete(maHP); // gọi procedure HocPhan_Delete
-        } catch (DataAccessException e) {
-            // chuyển lỗi SQL từ procedure thành RuntimeException
-            throw new RuntimeException(e.getRootCause().getMessage());
+            repo.delete(maHP);
+        } catch (DataIntegrityViolationException ex) {
+            throw new RuntimeException("Không thể xóa: học phần đang có lớp học phần tham chiếu!");
         }
     }
+
 
     public HocPhan getHocPhanById(int maHP) {
         return repo.getById(maHP);

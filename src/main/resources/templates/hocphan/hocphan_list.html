@@ -123,6 +123,7 @@
         })
             .then(res => res.json())
             .then(data => {
+                alert(data.message); // thông báo FE
                 location.reload();
             })
             .catch(err => alert(err.message));
@@ -147,17 +148,17 @@
         });
     });
 
-    // Xóa học phần
+    // Xóa
     document.querySelectorAll(".btnDelete").forEach(btn => {
         btn.addEventListener("click", function() {
             if (!confirm("Bạn có chắc muốn xóa học phần này?")) return;
             const maHP = this.getAttribute("data-id");
             fetch(`/api/hocPhan/delete/${maHP}`, { method: "DELETE" })
-                .then(res => {
-                    if (!res.ok) return res.text().then(msg => { throw new Error(msg); });
-                    this.closest("tr").remove();
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message); // hiển thị message ngắn gọn
+                    if(res.ok) this.closest("tr").remove();
                 })
-                .catch(err => alert(err.message));
         });
     });
 </script>
