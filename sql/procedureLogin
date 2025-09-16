@@ -1,0 +1,26 @@
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[sp_GetAllTaiKhoan]
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT *
+    FROM taikhoan
+END
+
+CREATE PROCEDURE sp_CheckLogin
+    @TenDangNhap NVARCHAR(50),
+    @MatKhau NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT MaTK, TenDangNhap, LoaiTaiKhoan, MaSV, MaNV
+    FROM TaiKhoan
+    WHERE TenDangNhap = @TenDangNhap AND MatKhau = @MatKhau;
+END;
+GO
