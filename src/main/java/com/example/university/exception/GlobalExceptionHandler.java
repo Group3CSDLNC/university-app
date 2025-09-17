@@ -1,6 +1,7 @@
 package com.example.university.exception;
 
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -12,7 +13,7 @@ import java.util.Map;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Bắt lỗi do DB ném ra
+    // Lỗi DB (ví dụ SP THROW, constraint, FK violation…)
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<Map<String, Object>> handleDataAccess(DataAccessException ex) {
         Map<String, Object> body = new HashMap<>();
@@ -21,8 +22,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-    // Bắt lỗi Not Found
-    @ExceptionHandler(org.springframework.dao.EmptyResultDataAccessException.class)
+    // Lỗi không tìm thấy (vd: SELECT không có kết quả)
+    @ExceptionHandler(EmptyResultDataAccessException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(Exception ex) {
         Map<String, Object> body = new HashMap<>();
         body.put("error", "Không tìm thấy dữ liệu");
@@ -30,7 +31,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
-    // Bắt lỗi khác
+    // Các lỗi khác
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
         Map<String, Object> body = new HashMap<>();

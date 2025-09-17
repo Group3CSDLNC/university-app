@@ -1,0 +1,106 @@
+CREATE OR ALTER PROCEDURE sp_DangKyHoc
+    @MaSV INT,
+    @MaLHP VARCHAR(10),
+    @HocKy INT,
+    @NamHoc VARCHAR(9)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Kiểm tra học viên tồn tại
+    IF NOT EXISTS (SELECT 1 FROM sinhvien WHERE MaSV = @MaSV)
+        THROW 61001, 'Học viên không tồn tại', 1;
+
+    -- Kiểm tra lớp học phần tồn tại
+    IF NOT EXISTS (SELECT 1 FROM lophocphan WHERE MaLHP = @MaLHP)
+        THROW 61002, 'Lớp học phần không tồn tại', 1;
+
+    DECLARE @MaHP INT = (SELECT MaHP FROM lophocphan WHERE MaLHP = @MaLHP);
+
+    -- Kiểm tra xung đột lịch học
+    IF EXISTS (
+        SELECT 1
+        FROM lichhoc lhNew
+        JOIN lichhoc lhOld ON lhNew.Thu = lhOld.Thu
+        WHERE lhNew.MaLHP = @MaLHP
+          AND lhOld.MaLHP IN (SELECT MaLHP FROM dangky WHERE MaSV = @MaSV)
+          AND (
+                lhNew.TietBatDau < lhOld.TietBatDau + lhOld.SoTiet
+                AND lhOld.TietBatDau < lhNew.TietBatDau + lhNew.SoTiet
+              )
+    )
+        THROW 61003, 'Xung đột lịch học với lớp đã đăng ký', 1;
+
+    -- Thêm đăng ký
+    INSERT INTO dangky(MaSV, MaHP, HocKy, NamHoc, NgayDangKy, TrangThai, MaLHP)
+    VALUES (@MaSV, @MaHP, @HocKy, @NamHoc, GETDATE(), 1, @MaLHP);
+END;
+
+CREATE OR ALTER PROCEDURE sp_ThemHocVien
+    @HoTen NVARCHAR(100),
+    @NgaySinh DATE,
+    @GioiTinh CHAR(1),
+    @MaCN INT,
+    @DiaChi NVARCHAR(100),
+    @TinhTrang TINYINT,
+    @Email VARCHAR(100),
+    @NamHoc INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @NewId INT = (SELECT ISNULL(MAX(MaSV),0)+1 FROM sinhvien);
+
+    INSERT INTO sinhvien(MaSV, HoTen, NgaySinh, GioiTinh, MaCN, DiaChi, TinhTrang, Email, NamHoc)
+    VALUES (@NewId, @HoTen, @NgaySinh, @GioiTinh, @MaCN, @DiaChi, @TinhTrang, @Email, @NamHoc);
+END;
+
+CREATE OR ALTER PROCEDURE sp_SuaHocVien
+    @MaSV INT,
+    @HoTen NVARCHAR(100),
+    @NgaySinh DATE,
+    @GioiTinh CHAR(1),
+    @MaCN INT,
+    @DiaChi NVARCHAR(100),
+    @TinhTrang TINYINT,
+    @Email VARCHAR(100),
+    @NamHoc INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE sinhvien
+    SET HoTen = @HoTen,
+        NgaySinh = @NgaySinh,
+        GioiTinh = @GioiTinh,
+        MaCN = @MaCN,
+        DiaChi = @DiaChi,
+        TinhTrang = @TinhTrang,
+        Email = @Email,
+        NamHoc = @NamHoc
+    WHERE MaSV = @MaSV;
+
+    IF @@ROWCOUNT = 0
+        THROW 60001, 'Không tìm thấy học viên cần cập nhật', 1;
+END;
+
+CREATE OR ALTER PROCEDURE sp_XoaHocVien
+    @MaSV INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM dangky WHERE MaSV = @MaSV)
+        THROW 60002, 'Không thể xóa học viên vì đã có đăng ký', 1;
+
+    DELETE FROM sinhvien WHERE MaSV = @MaSV;
+
+    IF @@ROWCOUNT = 0
+        THROW 60003, 'Không tìm thấy học viên cần xóa', 1;
+END;
+
+CREATE OR ALTER PROCEDURE sp_LietKeHocVien
+AS
+BEGIN
+    SELECT * FROM sinhvien;
+END;
