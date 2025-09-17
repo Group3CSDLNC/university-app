@@ -5,11 +5,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class HocPhan {
-    private int maHP ;
+    private Integer maHP ;
     private String tenHP ;
     private int soTinChi ;
-    private String tietTH ;
-    private String tietLT ;
+    private int tietTH ;
+    private int tietLT ;
     private int maCTDT ;
-    private String tienQuyet ;
+    private Integer tienQuyet;
 }
