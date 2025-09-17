@@ -1,0 +1,82 @@
+CREATE OR ALTER PROCEDURE sp_ThemNhanVien
+    @HoTen NVARCHAR(100),
+    @HocVi VARCHAR(30),
+    @VaiTro VARCHAR(50),
+    @MaQuanLy INT,
+    @Email VARCHAR(100),
+    @Sdt VARCHAR(15)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Kiểm tra quản lý tồn tại
+    IF NOT EXISTS (SELECT 1 FROM nhanvien WHERE MaNV = @MaQuanLy)
+    BEGIN
+        THROW 50001, 'Nhân viên quản lý không tồn tại', 1;
+    END;
+
+    DECLARE @NewId INT = (SELECT ISNULL(MAX(MaNV),0)+1 FROM nhanvien);
+
+    INSERT INTO nhanvien(MaNV, HoTen, HocVi, VaiTro, MaQuanLy, Email, Sdt)
+    VALUES (@NewId, @HoTen, @HocVi, @VaiTro, @MaQuanLy, @Email, @Sdt);
+END;
+
+
+CREATE OR ALTER PROCEDURE sp_SuaNhanVien
+    @MaNV INT,
+    @HoTen NVARCHAR(100),
+    @HocVi VARCHAR(30),
+    @VaiTro VARCHAR(50),
+    @MaQuanLy INT,
+    @Email VARCHAR(100),
+    @Sdt VARCHAR(15)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Không cho tự quản lý chính mình
+    IF (@MaNV = @MaQuanLy)
+    BEGIN
+        THROW 50002, 'Nhân viên không thể tự quản lý chính mình', 1;
+    END;
+
+    -- Kiểm tra quản lý tồn tại
+    IF NOT EXISTS (SELECT 1 FROM nhanvien WHERE MaNV = @MaQuanLy)
+    BEGIN
+        THROW 50003, 'Nhân viên quản lý không tồn tại', 1;
+    END;
+
+    UPDATE nhanvien
+    SET HoTen = @HoTen,
+        HocVi = @HocVi,
+        VaiTro = @VaiTro,
+        MaQuanLy = @MaQuanLy,
+        Email = @Email,
+        Sdt = @Sdt
+    WHERE MaNV = @MaNV;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        THROW 50004, 'Không tìm thấy nhân viên cần cập nhật', 1;
+    END;
+END;
+
+CREATE OR ALTER PROCEDURE sp_XoaNhanVien
+    @MaNV INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Không cho xóa nếu đang quản lý người khác
+    IF EXISTS (SELECT 1 FROM nhanvien WHERE MaQuanLy = @MaNV)
+    BEGIN
+        THROW 50005, 'Không thể xóa vì nhân viên này đang quản lý người khác', 1;
+    END;
+
+    DELETE FROM nhanvien WHERE MaNV = @MaNV;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        THROW 50006, 'Không tìm thấy nhân viên cần xóa', 1;
+    END;
+END;
