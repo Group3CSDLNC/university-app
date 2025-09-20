@@ -1,7 +1,10 @@
 package com.example.university.web.controller;
 
+import com.example.university.model.ChuongTrinhDaoTao;
 import com.example.university.model.HocPhan;
+import com.example.university.service.ChuongTrinhDaoTaoService;
 import com.example.university.service.HocPhanService;
+import com.example.university.service.SessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +23,18 @@ public class HocPhanController {
     @Autowired
     private HocPhanService hocPhanService;
 
+    @Autowired
+    private ChuongTrinhDaoTaoService chuongTrinhDaoTaoService;
+
+    @Autowired
+    private SessionService sessionService;
     // Danh sách
     @GetMapping
-    public String listHocPhan(Model model, @RequestParam(value = "keyword", required = false) String keyword) {
+    public String listHocPhan(Model model,
+                              @RequestParam(value = "keyword", required = false) String keyword) {
+        if (!sessionService.isLoggedIn()) {
+            return "redirect:/login";
+        }
         List<HocPhan> hocphans;
         if (keyword != null && !keyword.trim().isEmpty()) {
             hocphans = hocPhanService.searchHocPhan(keyword);
@@ -31,13 +43,20 @@ public class HocPhanController {
             hocphans = hocPhanService.getAllHocPhan();
         }
 
-        // Tạo map: maHP -> tenHP
         Map<Integer, String> hocphanMap = hocphans.stream()
                 .collect(Collectors.toMap(HocPhan::getMaHP, HocPhan::getTenHP));
+
+        List<ChuongTrinhDaoTao> ctdts = chuongTrinhDaoTaoService.getAll("");
+
+        Map<Integer, String> ctdtMap = ctdts.stream()
+                .collect(Collectors.toMap(ChuongTrinhDaoTao::getMaCTDT, ChuongTrinhDaoTao::getTenCTDT));
+
         model.addAttribute("hocphans", hocphans);
         model.addAttribute("hocphanMap", hocphanMap);
+        model.addAttribute("ctdts", ctdts);     // cho dropdown thêm/sửa
+        model.addAttribute("ctdtMap", ctdtMap); // cho hiển thị list
 
-        return "hocphan/hocphan_list";
+        return "hocphan/hocphan_table";
     }
 
     // Lấy 1 học phần theo id (dùng cho popup sửa)

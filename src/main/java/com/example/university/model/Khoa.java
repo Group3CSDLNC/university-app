@@ -6,8 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Khoa {
-    private int maKhoa ;
-    private String tenKhoa ;
-    private String email ;
-
+    private Integer maKhoa;
+    private String tenKhoa;
+    private String email;
 }

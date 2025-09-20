@@ -6,10 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ChuongTrinhDaoTao {
-    private int maCTDT ;
-    private String tenCTDT ;
-    private String tongTinChi ;
-    private int maCN ;
-    private String namHoc ;
-
+    private Integer maCTDT;
+    private String tenCTDT;
+    private Integer tongTinChi;
+    private Integer maCN;
+    private String namHoc;
 }

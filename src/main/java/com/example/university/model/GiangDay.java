@@ -6,9 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GiangDay {
-    private int maNV ;
-    private int maLHP ;
-    private String loaiTiet ;
-    private String soTietPhanCong ;
-
+    private Integer maGV;
+    private String maLHP;
+    private Integer soTietPhanCong;
 }

@@ -33,20 +33,10 @@ public class HocPhanRepository {
 
     // CREATE
     public void insert(HocPhan hocPhan) {
-        // Lấy MaHP lớn nhất hiện tại
-        Integer maxId = jdbcTemplate.queryForObject(
-                "SELECT ISNULL(MAX(MaHP), 0) FROM HocPhan",
-                Integer.class
-        );
-
-        // Gán MaHP mới = maxId + 1
-        int newId = maxId + 1;
-        hocPhan.setMaHP(newId);
 
         // Insert bản ghi
         jdbcTemplate.update(
-                "EXEC sp_InsertHocPhan ?, ?, ?, ?, ?, ?, ?",
-                hocPhan.getMaHP(),
+                "EXEC sp_AddHocPhan ?, ?, ?, ?, ?, ?",
                 hocPhan.getTenHP(),
                 hocPhan.getSoTinChi(),
                 hocPhan.getTietTH(),
@@ -89,4 +79,24 @@ public class HocPhanRepository {
     public List<HocPhan> searchByKeyword(String keyword) {
         return jdbcTemplate.query("EXEC sp_SearchHocPhanByKeyword ?", new Object[]{keyword}, hocPhanMapper);
     }
+
+    public boolean existsByTenHPAndMaCTDT(String tenHP, int maCTDT, Integer excludeMaHP) {
+        String sql = "SELECT COUNT(*) FROM HocPhan WHERE TenHP = ? AND MaCTDT = ?";
+        Object[] params;
+        if (excludeMaHP != null) {
+            sql += " AND MaHP <> ?";
+            params = new Object[]{tenHP, maCTDT, excludeMaHP};
+        } else {
+            params = new Object[]{tenHP, maCTDT};
+        }
+        Integer count = jdbcTemplate.queryForObject(sql, params, Integer.class);
+        return count != null && count > 0;
+    }
+
+    public int countByMaCTDT(int maCTDT) {
+        String sql = "SELECT COUNT(*) FROM HocPhan WHERE MaCTDT = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, new Object[]{maCTDT}, Integer.class);
+        return count != null ? count : 0;
+    }
+
 }

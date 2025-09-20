@@ -1,7 +1,7 @@
 package com.example.university.web.controller;
 
-import com.example.university.model.HocPhan;
-import com.example.university.service.HocPhanService;
+import com.example.university.model.ChuongTrinhDaoTao;
+import com.example.university.service.ChuongTrinhDaoTaoService;
 import com.example.university.service.SessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -13,13 +13,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 @RestController
-@RequestMapping("/api/hocPhan")
-public class HocPhanApiController {
+@RequestMapping("/api/chuongTrinhDaoTao")
+public class ChuongTrinhDaoTaoApiController {
 
     @Autowired
-    private HocPhanService hocPhanService;
+    private ChuongTrinhDaoTaoService service;
+
     @Autowired
     private SessionService sessionService;
 
@@ -29,37 +29,38 @@ public class HocPhanApiController {
         }
     }
 
-    // Lấy danh sách
     @GetMapping
-    public List<HocPhan> getAll() {
+    @ResponseBody
+    public List<ChuongTrinhDaoTao> listCTDT(@RequestParam(value="keyword", required=false) String keyword) {
         checkLogin();
-
-        return hocPhanService.getAllHocPhan();
+        if(keyword != null && !keyword.isEmpty()) {
+            return service.search(keyword);
+        } else {
+            return service.getAll("");
+        }
     }
 
-    // Lấy theo id
-    @GetMapping("/{maHP}")
-    public HocPhan getById(@PathVariable int maHP) {
-        checkLogin();
 
-        return hocPhanService.getHocPhanById(maHP);
+    @GetMapping("/{id}")
+    public ChuongTrinhDaoTao getById(@PathVariable int id) {
+        checkLogin();
+        return service.getById(id);
     }
 
-    // Thêm / Cập nhật
     @PostMapping("/save")
-    public ResponseEntity<Map<String, Object>> save(@RequestBody HocPhan hocPhan) {
+    public ResponseEntity<Map<String, Object>> save(@RequestBody ChuongTrinhDaoTao ctdt) {
         checkLogin();
-
         Map<String, Object> response = new HashMap<>();
         try {
-            if (hocPhan.getMaHP() != null) {
-                hocPhanService.updateHocPhan(hocPhan);
+            if (ctdt.getMaCTDT() != null) {
+                service.update(ctdt);
                 response.put("message", "Cập nhật thành công");
             } else {
-                hocPhanService.addHocPhan(hocPhan);
+                int newId = service.add(ctdt);
+                ctdt.setMaCTDT(newId);
                 response.put("message", "Thêm mới thành công");
             }
-            response.put("hocPhan", hocPhan);
+            response.put("ctdt", ctdt);
             return ResponseEntity.ok(response);
         } catch (DataAccessException ex) {
             Throwable root = ex.getRootCause();
@@ -72,20 +73,19 @@ public class HocPhanApiController {
         }
     }
 
-    // Xóa
-    @DeleteMapping("/delete/{maHP}")
-    public ResponseEntity<Map<String, String>> delete(@PathVariable int maHP) {
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<Map<String, String>> delete(@PathVariable int id) {
         checkLogin();
         Map<String, String> response = new HashMap<>();
         try {
-            hocPhanService.deleteHocPhan(maHP);
+            service.delete(id);
             response.put("message", "Xóa thành công");
             return ResponseEntity.ok(response);
         } catch (DataAccessException ex) {
             Throwable root = ex.getRootCause();
             String msg = (root != null) ? root.getMessage() : ex.getMessage();
-            if(msg != null && msg.contains("Không thể xóa")) {
-                msg = msg.substring(msg.indexOf("Không thể xóa"));
+            if(msg != null && msg.contains("Khong the xoa")) {
+                msg = msg.substring(msg.indexOf("Khong the xoa"));
             }
             response.put("message", msg != null ? msg : "Lỗi không xác định");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

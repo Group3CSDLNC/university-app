@@ -6,10 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class LopHocPhan {
-    private int maLHP ;
-    private int maHP ;
-    private String hocKy ;
-    private String namHoc ;
-    private int siSo ;
-
+    private String maLHP;
+    private Integer maHP;
+    private Integer hocKy;
+    private String namHoc;
+    private Integer siSo;
 }

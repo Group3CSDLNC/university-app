@@ -1,0 +1,12 @@
+<!-- Partial HTML chỉ tbody -->
+<tr th:each="ct : ${ctdts}">
+    <td th:text="${ct.maCTDT}"></td>
+    <td th:text="${ct.tenCTDT}"></td>
+    <td th:text="${ct.tongTinChi}"></td>
+    <td th:text="${ct.maCN}"></td>
+    <td th:text="${ct.namHoc}"></td>
+    <td>
+        <button class="btn btn-sm btn-primary btnEdit" th:data-id="${ct.maCTDT}">Sửa</button>
+        <button class="btn btn-sm btn-danger btnDelete" th:data-id="${ct.maCTDT}">Xóa</button>
+    </td>
+</tr>

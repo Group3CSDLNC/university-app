@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống quản lý trung tâm đào tạo</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/dashboard/home.css">
+    <link rel="stylesheet" href="/static/hocphan/hocphan.css">
+</head>
+<body>
+<div class="header">
+    <h4>Hệ thống quản lý trung tâm đào tạo</h4>
+    <ul class="menu">
+        <li><a href="#" data-module="home">Dashboard</a></li>
+        <li><a href="#" data-module="ctdt">Chương trình đào tạo</a></li>
+        <li><a href="#" data-module="khoahoc">Khóa đào tạo</a></li>
+        <li><a href="#" data-module="hocphan">Học phần</a></li>
+        <li><a href="#" data-module="hocvien">Học viên</a></li>
+        <li><a href="#" data-module="nhanvien">Nhân viên</a></li>
+        <li><a href="#" data-module="giangvien">Giảng viên</a></li>
+        <li><a href="#" data-module="phonghoc">Phòng học</a></li>
+        <li><a href="#" data-module="diemthi">Điểm thi</a></li>
+        <li><a href="#" data-module="luong">Lương</a></li>
+    </ul>
+    <div class="user-info">
+        <i class="fa-solid fa-user"></i> <span id="username">Admin</span>
+        <i class="fa-solid fa-caret-down"></i>
+        <div class="user-dropdown" id="userDropdown">
+            <a href="#" id="viewProfile">Thông tin cá nhân</a>
+            <a href="/logout">Đăng xuất</a>
+        </div>
+    </div>
+</div>
+
+<div class="content" id="contentArea">
+    <!-- Module load tại đây -->
+</div>
+
+<script src="/dashboard/home.js" defer></script>
+<script src="/static/hocphan/hocphan.js"></script>
+</body>
+</html>

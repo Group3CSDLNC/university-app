@@ -6,12 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class LichHoc {
-    private int maLichHoc ;
-    private int maLHP ;
-    private String thu ;
-    private String tietBatDau ;
-    private int soTiet ;
-    private int maPH ;
-    private String loaiTiet ;
-
+    private Integer maLichHoc;
+    private String maLHP;
+    private java.sql.Date ngay;
+    private String maPH;
+    private Integer soTiet;
 }

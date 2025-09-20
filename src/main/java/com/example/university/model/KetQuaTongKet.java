@@ -5,8 +5,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class DangKy {
+public class KetQuaTongKet {
     private Integer maSV;
-    private String maLHP;
-    private java.sql.Date ngayDangKy;
+    private Integer maHP;
+    private Double tongKet;
+    private String xepLoai;
 }

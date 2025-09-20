@@ -42,7 +42,7 @@
             <td th:text="${hp.soTinChi}"></td>
             <td th:text="${hp.tietTH}"></td>
             <td th:text="${hp.tietLT}"></td>
-            <td th:text="${hp.maCTDT}"></td>
+            <td th:text="${ctdtMap[hp.maCTDT]}"></td>
             <td>
                 <span th:text="${hp.tienQuyet != null ? hocphanMap[hp.tienQuyet] : ''}"></span>
             </td>
@@ -80,8 +80,15 @@
                 </div>
                 <div class="form-group">
                     <label>Chương trình đào tạo</label>
-                    <input type="number" name="maCTDT" id="maCTDT" class="form-control">
+                    <select name="maCTDT" id="maCTDT" class="form-control" required>
+                        <option value="">-- Chọn CTDT --</option>
+                        <option th:each="ct : ${ctdts}"
+                                th:value="${ct.maCTDT}"
+                                th:text="${ct.tenCTDT}">
+                        </option>
+                    </select>
                 </div>
+
                 <div class="form-group">
                     <label>Môn tiên quyết</label>
                     <select name="tienQuyet" id="tienQuyet" class="form-control">

@@ -1,0 +1,16 @@
+<!-- Partial HTML chỉ tbody -->
+<tr th:each="hp,iterStat : ${hocphans}">
+    <td th:text="${iterStat.index + 1}"></td>
+    <td th:text="${hp.tenHP}"></td>
+    <td th:text="${hp.soTinChi}"></td>
+    <td th:text="${hp.tietTH}"></td>
+    <td th:text="${hp.tietLT}"></td>
+    <td th:text="${ctdtMap[hp.maCTDT]}"></td>
+    <td>
+        <span th:text="${hp.tienQuyet != null ? hocphanMap[hp.tienQuyet] : ''}"></span>
+    </td>
+    <td>
+        <button class="btn btn-sm btn-primary btnEdit" th:data-id="${hp.maHP}">Sửa</button>
+        <button class="btn btn-sm btn-danger btnDelete" th:data-id="${hp.maHP}">Xóa</button>
+    </td>
+</tr>
