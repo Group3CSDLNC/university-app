@@ -10,7 +10,7 @@ public class DangKyService {
     @Autowired
     private DangKyRepository repo;
 
-    public void dangKyHoc(int maSV, String maLHP, int hocKy, String namHoc) {
-        repo.dangKyHoc(maSV, maLHP, hocKy, namHoc);
+    public void dangKyHoc(int maSV, String maLHP) {
+        repo.dangKyHoc(maSV, maLHP);
     }
 }

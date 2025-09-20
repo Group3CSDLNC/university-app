@@ -13,23 +13,13 @@ public class NhanVienService {
     @Autowired
     private NhanVienRepository repo;
 
-    public List<NhanVien> getAllNhanVien() {
-        return repo.findAll();
-    }
+    public List<NhanVien> getAll() { return repo.findAll(); }
 
-    public void addNhanVien(NhanVien nv) {
-        repo.save(nv);
-    }
+    public NhanVien getById(int maNV) { return repo.findById(maNV); }
 
-    public void updateNhanVien(NhanVien nv) {
-        repo.update(nv);
-    }
+    public void add(NhanVien nv) { repo.add(nv); }
 
-    public void deleteNhanVien(int maNV) {
-        repo.delete(maNV);
-    }
+    public void update(NhanVien nv) { repo.update(nv); }
 
-    public NhanVien getNhanVienById(int maNV) {
-        return repo.findById(maNV);
-    }
+    public void delete(int maNV) { repo.delete(maNV); }
 }

@@ -1,106 +1,120 @@
 CREATE OR ALTER PROCEDURE sp_DangKyHoc
     @MaSV INT,
-    @MaLHP VARCHAR(10),
-    @HocKy INT,
-    @NamHoc VARCHAR(9)
+    @MaLHP VARCHAR(10)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Kiểm tra học viên tồn tại
-    IF NOT EXISTS (SELECT 1 FROM sinhvien WHERE MaSV = @MaSV)
-        THROW 61001, 'Học viên không tồn tại', 1;
+    -- 1. Kiểm tra sinh viên tồn tại
+    IF NOT EXISTS (SELECT 1 FROM SinhVien WHERE MaSV = @MaSV)
+        THROW 70001, 'Sinh viên không tồn tại', 1;
 
-    -- Kiểm tra lớp học phần tồn tại
-    IF NOT EXISTS (SELECT 1 FROM lophocphan WHERE MaLHP = @MaLHP)
-        THROW 61002, 'Lớp học phần không tồn tại', 1;
+    -- 2. Kiểm tra lớp học phần tồn tại
+    IF NOT EXISTS (SELECT 1 FROM LopHocPhan WHERE MaLHP = @MaLHP)
+        THROW 70002, 'Lớp học phần không tồn tại', 1;
 
-    DECLARE @MaHP INT = (SELECT MaHP FROM lophocphan WHERE MaLHP = @MaLHP);
+    -- 3. Kiểm tra sức chứa phòng học
+    DECLARE @SucChua INT, @SoLuong INT, @MaPH VARCHAR(10);
+    SELECT TOP 1 @MaPH = lh.MaPH
+    FROM LichHoc lh WHERE lh.MaLHP = @MaLHP;
 
-    -- Kiểm tra xung đột lịch học
+    SELECT @SucChua = SucChua FROM PhongHoc WHERE MaPH = @MaPH;
+    SELECT @SoLuong = COUNT(*) FROM DangKy WHERE MaLHP = @MaLHP;
+
+    IF @SoLuong >= @SucChua
+        THROW 70003, 'Phòng học đã đầy, không thể đăng ký', 1;
+
+    -- 4. Kiểm tra xung đột lịch học (cùng ngày)
     IF EXISTS (
         SELECT 1
-        FROM lichhoc lhNew
-        JOIN lichhoc lhOld ON lhNew.Thu = lhOld.Thu
+        FROM LichHoc lhNew
+        JOIN LichHoc lhOld ON lhNew.Ngay = lhOld.Ngay
         WHERE lhNew.MaLHP = @MaLHP
-          AND lhOld.MaLHP IN (SELECT MaLHP FROM dangky WHERE MaSV = @MaSV)
-          AND (
-                lhNew.TietBatDau < lhOld.TietBatDau + lhOld.SoTiet
-                AND lhOld.TietBatDau < lhNew.TietBatDau + lhNew.SoTiet
-              )
+          AND lhOld.MaLHP IN (SELECT MaLHP FROM DangKy WHERE MaSV = @MaSV)
     )
-        THROW 61003, 'Xung đột lịch học với lớp đã đăng ký', 1;
+        THROW 70004, 'Xung đột lịch học với lớp đã đăng ký', 1;
 
-    -- Thêm đăng ký
-    INSERT INTO dangky(MaSV, MaHP, HocKy, NamHoc, NgayDangKy, TrangThai, MaLHP)
-    VALUES (@MaSV, @MaHP, @HocKy, @NamHoc, GETDATE(), 1, @MaLHP);
+    -- 5. Thêm đăng ký
+    INSERT INTO DangKy(MaSV, MaLHP, NgayDangKy)
+    VALUES (@MaSV, @MaLHP, GETDATE());
 END;
 
-CREATE OR ALTER PROCEDURE sp_ThemHocVien
+
+CREATE OR ALTER PROCEDURE sp_ThemSinhVien
     @HoTen NVARCHAR(100),
     @NgaySinh DATE,
     @GioiTinh CHAR(1),
-    @MaCN INT,
     @DiaChi NVARCHAR(100),
+    @MaCN INT,
     @TinhTrang TINYINT,
-    @Email VARCHAR(100),
+    @Email NVARCHAR(100),
     @NamHoc INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @NewId INT = (SELECT ISNULL(MAX(MaSV),0)+1 FROM sinhvien);
+    -- 1. Kiểm tra chuyên ngành có tồn tại không
+    IF NOT EXISTS (SELECT 1 FROM ChuyenNganh WHERE MaCN = @MaCN)
+        THROW 71001, 'Chuyên ngành không tồn tại', 1;
 
-    INSERT INTO sinhvien(MaSV, HoTen, NgaySinh, GioiTinh, MaCN, DiaChi, TinhTrang, Email, NamHoc)
-    VALUES (@NewId, @HoTen, @NgaySinh, @GioiTinh, @MaCN, @DiaChi, @TinhTrang, @Email, @NamHoc);
+    -- 2. Kiểm tra trùng email
+    IF EXISTS (SELECT 1 FROM SinhVien WHERE Email = @Email)
+        THROW 71002, 'Email sinh viên đã tồn tại', 1;
+
+    -- 3. Thêm sinh viên
+    INSERT INTO SinhVien (HoTen, NgaySinh, GioiTinh, DiaChi, MaCN, TinhTrang, Email, NamHoc)
+    VALUES (@HoTen, @NgaySinh, @GioiTinh, @DiaChi, @MaCN, @TinhTrang, @Email, @NamHoc);
 END;
 
-CREATE OR ALTER PROCEDURE sp_SuaHocVien
+
+CREATE OR ALTER PROCEDURE sp_SuaSinhVien
     @MaSV INT,
     @HoTen NVARCHAR(100),
     @NgaySinh DATE,
     @GioiTinh CHAR(1),
-    @MaCN INT,
     @DiaChi NVARCHAR(100),
+    @MaCN INT,
     @TinhTrang TINYINT,
-    @Email VARCHAR(100),
+    @Email NVARCHAR(100),
     @NamHoc INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    UPDATE sinhvien
+    IF NOT EXISTS (SELECT 1 FROM SinhVien WHERE MaSV = @MaSV)
+        THROW 71003, 'Sinh viên không tồn tại', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM ChuyenNganh WHERE MaCN = @MaCN)
+        THROW 71001, 'Chuyên ngành không tồn tại', 1;
+
+    IF EXISTS (SELECT 1 FROM SinhVien WHERE Email = @Email AND MaSV <> @MaSV)
+        THROW 71002, 'Email sinh viên đã tồn tại', 1;
+
+    UPDATE SinhVien
     SET HoTen = @HoTen,
         NgaySinh = @NgaySinh,
         GioiTinh = @GioiTinh,
-        MaCN = @MaCN,
         DiaChi = @DiaChi,
+        MaCN = @MaCN,
         TinhTrang = @TinhTrang,
         Email = @Email,
         NamHoc = @NamHoc
     WHERE MaSV = @MaSV;
-
-    IF @@ROWCOUNT = 0
-        THROW 60001, 'Không tìm thấy học viên cần cập nhật', 1;
 END;
 
-CREATE OR ALTER PROCEDURE sp_XoaHocVien
+
+CREATE OR ALTER PROCEDURE sp_XoaSinhVien
     @MaSV INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    IF EXISTS (SELECT 1 FROM dangky WHERE MaSV = @MaSV)
-        THROW 60002, 'Không thể xóa học viên vì đã có đăng ký', 1;
+    IF NOT EXISTS (SELECT 1 FROM SinhVien WHERE MaSV = @MaSV)
+        THROW 71003, 'Sinh viên không tồn tại', 1;
 
-    DELETE FROM sinhvien WHERE MaSV = @MaSV;
+    IF EXISTS (SELECT 1 FROM DangKy WHERE MaSV = @MaSV)
+        THROW 71004, 'Không thể xóa, sinh viên đã đăng ký lớp học phần', 1;
 
-    IF @@ROWCOUNT = 0
-        THROW 60003, 'Không tìm thấy học viên cần xóa', 1;
+    DELETE FROM SinhVien WHERE MaSV = @MaSV;
 END;
 
-CREATE OR ALTER PROCEDURE sp_LietKeHocVien
-AS
-BEGIN
-    SELECT * FROM sinhvien;
-END;
