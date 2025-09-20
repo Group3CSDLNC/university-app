@@ -80,20 +80,12 @@
                 return response.json();
             })
             .then(user => {
-                // login thành công -> redirect theo loại tài khoản
-                if (user.loaiTaiKhoan === "Admin") {
-                    window.location.href = "/admin/home";
-                } else if (user.loaiTaiKhoan === "SinhVien") {
-                    window.location.href = "/sinhvien/home";
-                } else if (user.loaiTaiKhoan === "NhanVien") {
-                    window.location.href = "/nhanvien/home";
-                } else if (user.loaiTaiKhoan === "QuanLy") {
-                    window.location.href = "/quanly/home";
-                }
+                // lưu role vào localStorage/sessionStorage
+                sessionStorage.setItem("role", user.loaiTaiKhoan);
+                // redirect sang SPA
+                window.location.href = "/dashboard";
             })
-            .catch(err => {
-                errorMessage.innerText = err.message;
-            });
+            .catch(err => alert(err.message));
     });
 </script>
 

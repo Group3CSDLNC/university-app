@@ -5,6 +5,7 @@ import com.example.university.repository.HocPhanRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,10 +17,27 @@ public class HocPhanService {
     private HocPhanRepository repo;
 
     public void addHocPhan(HocPhan hocPhan) {
+        // check trùng tên trong cùng CTDT
+        if (existsByTenHPAndMaCTDT(hocPhan.getTenHP(), hocPhan.getMaCTDT(), null)) {
+            throw new RuntimeException("Tên học phần đã tồn tại trong chương trình đào tạo này!");
+        }
+
+        // check tối đa 10 môn
+        int count = countByMaCTDT(hocPhan.getMaCTDT());
+        if (count >= 10) {
+            throw new RuntimeException("Mỗi chương trình đào tạo chỉ được tối đa 10 học phần!");
+        }
+
         repo.insert(hocPhan);
     }
 
+
     public void updateHocPhan(HocPhan hocPhan) {
+        // check trùng tên trong cùng CTDT (trừ chính nó)
+        if (existsByTenHPAndMaCTDT(hocPhan.getTenHP(), hocPhan.getMaCTDT(), hocPhan.getMaHP())) {
+            throw new RuntimeException("Tên học phần đã tồn tại trong chương trình đào tạo này!");
+        }
+
         repo.update(hocPhan);
     }
 
@@ -44,4 +62,10 @@ public class HocPhanService {
         return repo.searchByKeyword(keyword);
     }
 
+    public boolean existsByTenHPAndMaCTDT(String tenHP, int maCTDT, Integer excludeMaHP) {
+        return repo.existsByTenHPAndMaCTDT(tenHP, maCTDT, excludeMaHP);
+    }
+    public int countByMaCTDT(int maCTDT) {
+        return repo.countByMaCTDT(maCTDT);
+    }
 }

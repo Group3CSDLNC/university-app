@@ -6,14 +6,13 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SinhVien {
-    private int maSV ;
-    private String hoTen ;
-    private java.sql.Date ngaySinh ;
-    private String gioiTinh ;
-    private int maCN ;
-    private String diaChi ;
-    private String tinhTrang ;
-    private String email ;
-    private String namHoc ;
-
+    private Integer maSV;
+    private String hoTen;
+    private java.sql.Date ngaySinh;
+    private String gioiTinh;
+    private String diaChi;
+    private Integer maCN;
+    private Integer tinhTrang;
+    private String email;
+    private Integer namHoc;
 }

@@ -1,0 +1,53 @@
+/* static/chuongtrinhdaotao/chuongtrinhdaotao.css */
+.module-container {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 6px;
+}
+
+.module-header h4 {
+    margin: 0;
+    font-weight: 600;
+    color: #007bff;
+}
+
+.table thead th {
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+}
+
+.table td, .table th {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.btn-success, .btn-primary, .btn-danger {
+    border-radius: 4px;
+}
+
+.alert {
+    display: none;
+    margin-top: 10px;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1050;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-dialog {
+    max-width: 500px;
+    margin: 80px auto;
+}
+
+.modal-content {
+    padding: 20px;
+    border-radius: 6px;
+}

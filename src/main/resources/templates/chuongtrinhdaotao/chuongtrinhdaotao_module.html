@@ -1,0 +1,65 @@
+<div class="module-container">
+    <!-- Tiêu đề -->
+    <h4 class="module-title">Danh sách Chương trình đào tạo</h4>
+
+    <!-- Dòng nút thêm mới + tìm kiếm -->
+    <div class="module-actions d-flex justify-content-between align-items-center mb-3">
+        <button class="btn btn-success" id="btnAdd">Thêm CTDT</button>
+        <form id="searchForm" class="form-inline">
+            <input type="text" id="keywordInput" class="form-control" placeholder="Tìm theo tên CTDT hoặc năm học">
+            <button type="submit" class="btn btn-primary ml-2">Tìm kiếm</button>
+        </form>
+    </div>
+
+    <!-- Alert -->
+    <div class="alert alert-success" id="alertMessage"></div>
+
+    <!-- Bảng danh sách -->
+    <table class="table table-bordered table-hover">
+        <thead>
+        <tr>
+            <th>Mã CTDT</th>
+            <th>Tên CTDT</th>
+            <th>Tổng tín chỉ</th>
+            <th>Mã CN</th>
+            <th>Năm học</th>
+            <th>Hành động</th>
+        </tr>
+        </thead>
+        <tbody id="ctdtTableBody">
+        <!-- load từ partial /chuongTrinhDaoTao/table -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal thêm/sửa -->
+<div class="modal" tabindex="-1" role="dialog" id="ctdtModal">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content p-3">
+            <h5 class="mb-3">Chương trình đào tạo</h5>
+            <form id="ctdtForm">
+                <input type="hidden" id="maCTDT" name="maCTDT">
+                <div class="form-group">
+                    <label>Tên CTDT</label>
+                    <input type="text" id="tenCTDT" name="tenCTDT" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Tổng tín chỉ</label>
+                    <input type="number" id="tongTinChi" name="tongTinChi" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Mã CN</label>
+                    <input type="number" id="maCN" name="maCN" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Năm học</label>
+                    <input type="text" id="namHoc" name="namHoc" class="form-control" required>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success mr-2">Lưu</button>
+                    <button type="button" class="btn btn-secondary" id="btnClose">Đóng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

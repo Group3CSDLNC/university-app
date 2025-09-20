@@ -1,0 +1,8 @@
+#searchHocPhanForm input {
+    width: 250px;
+}
+
+.alert-success {
+    display: none;
+    margin-top: 10px;
+}
