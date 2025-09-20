@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Hệ thống quản lý trung tâm đào tạo</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .navbar-brand { font-weight: bold; }
+        .nav-link { color: #6c757d !important; }
+        .nav-link.active { color: #007bff !important; }
+        .dropdown-menu { min-width: 200px; }
+    </style>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý trung tâm đào tạo</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+                <a class="nav-link active" href="/dashboard/admin">Home</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/ctdt">CTDT</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/khoahoc">Khoahoc</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/hocphan">Hocphan</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/hocvien">Hocvien</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/nhanvien">Nhanvien</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/giangvien">Giangvien</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/phonghoc">Phonghoc</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/diemthi">Diemthi</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/luong">Luong</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                    <span th:text="${session.userName} ?: 'Admin'"></span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="/profile">Hồ sơ</a>
+                    <a class="dropdown-item" href="/logout">Đăng xuất</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Dashboard Admin</h2>
+            <p>Chào mừng <span th:text="${session.userName} ?: 'Admin'"></span></p>
+
+            <!-- Admin Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-white bg-primary">
+                        <div class="card-body">
+                            <h5 class="card-title">Tổng Học viên</h5>
+                            <h2>1,250</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-success">
+                        <div class="card-body">
+                            <h5 class="card-title">Tổng Nhân viên</h5>
+                            <h2>85</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body">
+                            <h5 class="card-title">Tổng Giảng viên</h5>
+                            <h2>45</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body">
+                            <h5 class="card-title">Khoa</h5>
+                            <h2>8</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row">
+                <div class="col-md-12">
+                    <h4>Hành động nhanh</h4>
+                    <div class="row">
+                        <div class="col-md-2">
+                            <a href="/admin/hoc-vien/add" class="btn btn-outline-primary btn-block mb-2">Thêm Học viên</a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="/admin/nhan-vien/add" class="btn btn-outline-success btn-block mb-2">Thêm Nhân viên</a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="/admin/chuong-trinh-dao-tao" class="btn btn-outline-info btn-block mb-2">Quản lý CTĐT</a>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="/admin/baocao" class="btn btn-outline-warning btn-block mb-2">Báo cáo</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+</body>
+</html>
