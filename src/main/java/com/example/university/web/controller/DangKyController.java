@@ -23,11 +23,8 @@ public class DangKyController {
     public ResponseEntity<?> dangKy(@RequestBody Map<String, Object> req) {
         int maSV = (int) req.get("maSV");
         String maLHP = (String) req.get("maLHP");
-        int hocKy = (int) req.get("hocKy");
-        String namHoc = (String) req.get("namHoc");
 
-        service.dangKyHoc(maSV, maLHP, hocKy, namHoc);
+        service.dangKyHoc(maSV, maLHP);
         return ResponseEntity.ok(Collections.singletonMap("message", "Đăng ký thành công"));
     }
-
 }

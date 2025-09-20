@@ -3,8 +3,10 @@ package com.example.university.web.controller;
 import com.example.university.model.NhanVien;
 import com.example.university.service.NhanVienService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -12,38 +14,34 @@ import java.util.List;
 public class NhanVienController {
 
     @Autowired
-    private NhanVienService nhanVienService;
+    private NhanVienService service;
 
-    // Lấy tất cả nhân viên
     @GetMapping
     public List<NhanVien> getAll() {
-        return nhanVienService.getAllNhanVien();
+        return service.getAll();
     }
 
-    // Lấy nhân viên theo id
     @GetMapping("/{id}")
     public NhanVien getById(@PathVariable int id) {
-        return nhanVienService.getNhanVienById(id);
+        return service.getById(id);
     }
 
-    // Thêm nhân viên
     @PostMapping
-    public void create(@RequestBody NhanVien nv) {
-        nhanVienService.addNhanVien(nv);
+    public ResponseEntity<?> add(@RequestBody NhanVien nv) {
+        service.add(nv);
+        return ResponseEntity.ok(Collections.singletonMap("message", "Thêm nhân viên thành công"));
     }
 
-    // Cập nhật nhân viên
     @PutMapping("/{id}")
-    public void update(@PathVariable int id, @RequestBody NhanVien nv) {
+    public ResponseEntity<?> update(@PathVariable int id, @RequestBody NhanVien nv) {
         nv.setMaNV(id);
-        nhanVienService.updateNhanVien(nv);
+        service.update(nv);
+        return ResponseEntity.ok(Collections.singletonMap("message", "Cập nhật nhân viên thành công"));
     }
 
-    // Xóa nhân viên
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable int id) {
-        nhanVienService.deleteNhanVien(id);
+    public ResponseEntity<?> delete(@PathVariable int id) {
+        service.delete(id);
+        return ResponseEntity.ok(Collections.singletonMap("message", "Xóa nhân viên thành công"));
     }
-
-
 }

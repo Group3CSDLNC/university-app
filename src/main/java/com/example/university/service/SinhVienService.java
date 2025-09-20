@@ -13,23 +13,13 @@ public class SinhVienService {
     @Autowired
     private SinhVienRepository repo;
 
-    public List<SinhVien> getAllSinhVien() {
-        return repo.findAll();
-    }
+    public List<SinhVien> getAll() { return repo.findAll(); }
 
-    public SinhVien getSinhVienById(int id) {
-        return repo.findById(id);
-    }
+    public SinhVien getById(int maSV) { return repo.findById(maSV); }
 
-    public void addSinhVien(SinhVien sv) {
-        repo.save(sv);
-    }
+    public void add(SinhVien sv) { repo.add(sv); }
 
-    public void updateSinhVien(SinhVien sv) {
-        repo.update(sv);
-    }
+    public void update(SinhVien sv) { repo.update(sv); }
 
-    public void deleteSinhVien(int id) {
-        repo.delete(id);
-    }
+    public void delete(int maSV) { repo.delete(maSV); }
 }

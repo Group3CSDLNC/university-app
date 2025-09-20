@@ -1,0 +1,107 @@
+CREATE OR ALTER PROCEDURE sp_BangDiemSinhVien
+    @MaSV INT,
+    @MaCTDT INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        sv.MaSV,
+        sv.HoTen,
+        hp.MaHP,
+        hp.TenHP,
+        ctdt.TenCTDT,
+        ctdt.NamHoc,
+        ctDiem.LanThi,
+        ctDiem.DiemCC,
+        ctDiem.DiemGK,
+        ctDiem.DiemCK,
+        (ISNULL(ctDiem.DiemCC,0) * 0.1 + ISNULL(ctDiem.DiemGK,0) * 0.3 + ISNULL(ctDiem.DiemCK,0) * 0.6) AS TongKet,
+        CASE 
+            WHEN (ISNULL(ctDiem.DiemCC,0) * 0.1 + ISNULL(ctDiem.DiemGK,0) * 0.3 + ISNULL(ctDiem.DiemCK,0) * 0.6) >= 5 THEN 'Pass'
+            ELSE 'Fail'
+        END AS TrangThai
+    FROM SinhVien sv
+    JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
+    JOIN ChuongTrinhDaoTao ctdt ON cn.MaCN = ctdt.MaCN AND ctdt.MaCTDT = @MaCTDT
+    JOIN HocPhan hp ON hp.MaCTDT = ctdt.MaCTDT
+    LEFT JOIN ChiTietDiem ctDiem ON ctDiem.MaSV = sv.MaSV AND ctDiem.MaHP = hp.MaHP
+    WHERE sv.MaSV = @MaSV;
+END;
+
+CREATE OR ALTER PROCEDURE sp_SinhVienChuaHoanThanhKhoa
+    @MaCTDT INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    ;WITH KetQua AS (
+        SELECT
+            sv.MaSV,
+            sv.HoTen,
+            hp.MaHP,
+            hp.TenHP,
+            ctDiem.LanThi,
+            ctDiem.DiemCC,
+            ctDiem.DiemGK,
+            ctDiem.DiemCK,
+            (ISNULL(ctDiem.DiemCC,0)*0.1 + ISNULL(ctDiem.DiemGK,0)*0.3 + ISNULL(ctDiem.DiemCK,0)*0.6) AS TongKet
+        FROM SinhVien sv
+        JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
+        JOIN ChuongTrinhDaoTao ctdt ON cn.MaCN = ctdt.MaCN AND ctdt.MaCTDT = @MaCTDT
+        JOIN HocPhan hp ON hp.MaCTDT = ctdt.MaCTDT
+        LEFT JOIN ChiTietDiem ctDiem ON ctDiem.MaSV = sv.MaSV AND ctDiem.MaHP = hp.MaHP
+    )
+    SELECT
+        kq.MaSV,
+        kq.HoTen,
+        kq.MaHP,
+        kq.TenHP,
+        kq.LanThi,
+        kq.DiemCC,
+        kq.DiemGK,
+        kq.DiemCK,
+        kq.TongKet,
+        CASE
+            WHEN kq.TongKet >= 5 THEN 'Pass'
+            ELSE 'Fail'
+        END AS TrangThai
+    FROM KetQua kq
+    WHERE kq.MaSV IN (
+        SELECT MaSV
+        FROM KetQua
+        GROUP BY MaSV
+        HAVING MAX(TongKet) < 5  -- Chỉ lấy SV chưa pass đủ môn
+            OR COUNT(CASE WHEN TongKet >= 5 THEN 1 END) < (SELECT COUNT(*) FROM HocPhan WHERE MaCTDT = @MaCTDT)
+    )
+    AND (kq.TongKet < 5 OR kq.TongKet IS NULL); -- chỉ show môn chưa đạt
+END;
+
+
+CREATE OR ALTER PROCEDURE sp_BaoCaoSiSoLop
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        lhp.MaLHP,
+        hp.TenHP,
+        COUNT(dk.MaSV) AS SiSoThucTe,
+        lhp.SiSo AS SiSoToiDa,
+        ph.SoPhong,
+        ph.SucChua,
+        CASE WHEN COUNT(dk.MaSV) > ph.SucChua THEN 'Vuot suc chua' ELSE 'OK' END AS TrangThaiPhong
+    FROM LopHocPhan lhp
+    JOIN HocPhan hp ON lhp.MaHP = hp.MaHP
+    LEFT JOIN DangKy dk ON dk.MaLHP = lhp.MaLHP
+    LEFT JOIN LichHoc lh ON lh.MaLHP = lhp.MaLHP
+    LEFT JOIN PhongHoc ph ON lh.MaPH = ph.MaPH
+    GROUP BY lhp.MaLHP, hp.TenHP, lhp.SiSo, ph.SoPhong, ph.SucChua;
+
+    -- Lịch trùng
+    SELECT 
+        lh1.MaLHP, lh1.Ngay, lh1.MaPH
+    FROM LichHoc lh1
+    JOIN LichHoc lh2 ON lh1.MaPH = lh2.MaPH AND lh1.Ngay = lh2.Ngay AND lh1.MaLHP <> lh2.MaLHP;
+END;
+

@@ -18,30 +18,30 @@ public class SinhVienController {
 
     @GetMapping
     public List<SinhVien> getAll() {
-        return service.getAllSinhVien();
+        return service.getAll();
     }
 
     @GetMapping("/{id}")
     public SinhVien getById(@PathVariable int id) {
-        return service.getSinhVienById(id);
+        return service.getById(id);
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody SinhVien sv) {
-        service.addSinhVien(sv);
-        return ResponseEntity.ok(Collections.singletonMap("message", "Thêm học viên thành công"));
+    public ResponseEntity<?> add(@RequestBody SinhVien sv) {
+        service.add(sv);
+        return ResponseEntity.ok(Collections.singletonMap("message", "Thêm sinh viên thành công"));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable int id, @RequestBody SinhVien sv) {
         sv.setMaSV(id);
-        service.updateSinhVien(sv);
-        return ResponseEntity.ok(Collections.singletonMap("message", "Cập nhật học viên thành công"));
+        service.update(sv);
+        return ResponseEntity.ok(Collections.singletonMap("message", "Cập nhật sinh viên thành công"));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable int id) {
-        service.deleteSinhVien(id);
-        return ResponseEntity.ok(Collections.singletonMap("message", "Xóa học viên thành công"));
+        service.delete(id);
+        return ResponseEntity.ok(Collections.singletonMap("message", "Xóa sinh viên thành công"));
     }
 }
