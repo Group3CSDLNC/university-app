@@ -61,21 +61,36 @@ END
 GO
 
 -- Danh sách + filter
-CREATE PROCEDURE sp_ListCTDT
+CREATE OR ALTER PROCEDURE sp_ListCTDT
     @MaKhoa INT = NULL,
     @NamHoc NVARCHAR(50) = NULL,
     @MaNVQuanLy INT = NULL
 AS
 BEGIN
-    SELECT CT.*, CN.TenCN, NV.HoTen AS NguoiQuanLy
-    FROM ChuongTrinhDaoTao CT
-    JOIN ChuyenNganh CN ON CT.MaCN=CN.MaCN
-    LEFT JOIN CTDT_NhanVien NVCT ON CT.MaCTDT=NVCT.MaCTDT
-    LEFT JOIN NhanVien NV ON NVCT.MaNV=NV.MaNV
-    WHERE (@MaKhoa IS NULL OR CN.MaKhoa=@MaKhoa)
-      AND (@NamHoc IS NULL OR CT.NamHoc=@NamHoc)
-      AND (@MaNVQuanLy IS NULL OR NV.MaNV=@MaNVQuanLy)
-END
+    SET NOCOUNT ON;
+
+    SELECT
+        ctdt.MaCTDT,
+        ctdt.TenCTDT,
+        ctdt.TongTinChi,
+        ctdt.MaCN,
+        cn.TenCN,
+        k.MaKhoa,
+        k.TenKhoa,
+        ctdt.NamHoc,
+        nv.MaNV AS NguoiQuanLy,
+        nv.HoTen AS TenNguoiQuanLy
+    FROM chuongtrinhdaotao ctdt
+    INNER JOIN ChuyenNganh cn ON ctdt.MaCN = cn.MaCN
+    INNER JOIN khoa k ON cn.MaKhoa = k.MaKhoa
+    LEFT JOIN CTDT_NhanVien ctdt_nv ON ctdt.MaCTDT = ctdt_nv.MaCTDT
+    LEFT JOIN nhanvien nv ON ctdt_nv.MaNV = nv.MaNV
+    WHERE
+        (@MaKhoa IS NULL OR k.MaKhoa = @MaKhoa)
+        AND (@NamHoc IS NULL OR ctdt.NamHoc = @NamHoc)
+        AND (@MaNVQuanLy IS NULL OR nv.MaNV = @MaNVQuanLy)
+    ORDER BY ctdt.NamHoc DESC, k.TenKhoa, cn.TenCN;
+END;
 GO
 
 -- Search CTDT theo keyword (tên hoặc năm học)

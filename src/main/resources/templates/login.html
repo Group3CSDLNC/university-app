@@ -80,12 +80,29 @@
                 return response.json();
             })
             .then(user => {
-                // lưu role vào localStorage/sessionStorage
+                // lưu role và tên đăng nhập vào sessionStorage
                 sessionStorage.setItem("role", user.loaiTaiKhoan);
-                // redirect sang SPA
-                window.location.href = "/dashboard";
+                sessionStorage.setItem("userName", user.tenDangNhap);
+
+                // redirect dựa trên role
+                switch(user.loaiTaiKhoan.toLowerCase()) {
+                    case "admin":
+                        window.location.href = "/dashboard/admin";
+                        break;
+                    case "sinhvien":
+                        window.location.href = "/dashboard/sinhvien";
+                        break;
+                    case "nhanvien":
+                        window.location.href = "/dashboard/nhanvien";
+                        break;
+                    case "quanly":
+                        window.location.href = "/dashboard/quanly";
+                        break;
+                }
             })
-            .catch(err => alert(err.message));
+            .catch(err => {
+                errorMessage.innerText = err.message;
+            });
     });
 </script>
 

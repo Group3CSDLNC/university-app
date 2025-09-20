@@ -1,5 +1,7 @@
 package com.example.university.web.controller;
 
+import com.example.university.service.SessionService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -7,10 +9,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 @RequestMapping("/dashboard")
 public class AdminHomeController {
+    @GetMapping("/admin")
+    public String dashboardAdmin() {
+        return "dashboard/admin";
+    }
 
-    @GetMapping("")
-    public String dashboard() {
-        // Trả về template admin/home.html
-        return "dashboard/home";
+    @GetMapping("/sinhvien")
+    public String dashboardSinhVien() {
+        return "dashboard/sinhvien";
+    }
+
+    @GetMapping("/nhanvien")
+    public String dashboardNhanVien() {
+        return "dashboard/nhanvien";
+    }
+
+    @GetMapping("/quanly")
+    public String dashboardQuanLy() {
+        return "dashboard/quanly";
     }
 }
