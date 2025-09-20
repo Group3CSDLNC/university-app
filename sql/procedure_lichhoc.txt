@@ -1,0 +1,135 @@
+CREATE OR ALTER PROCEDURE sp_ThemLichHoc
+    @MaLHP VARCHAR(10),
+    @Ngay DATE,
+    @MaPH VARCHAR(10),
+    @SoTiet INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- kiểm tra tồn tại
+    IF NOT EXISTS (SELECT 1 FROM LopHocPhan WHERE MaLHP = @MaLHP)
+        THROW 73001, 'Lớp học phần không tồn tại', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM PhongHoc WHERE MaPH = @MaPH)
+        THROW 73002, 'Phòng học không tồn tại', 1;
+
+    DECLARE @SiSo INT, @SucChua INT;
+    SELECT @SiSo = SiSo FROM LopHocPhan WHERE MaLHP = @MaLHP;
+    SELECT @SucChua = SucChua FROM PhongHoc WHERE MaPH = @MaPH;
+
+    IF @SucChua < @SiSo
+        THROW 73003, 'Phòng học không đủ sức chứa cho lớp này', 1;
+
+    IF (@SoTiet % 2) <> 0
+        THROW 73004, 'Số tiết phải là bội số của 2', 1;
+
+    -- trùng phòng (cùng ngày, cùng phòng) — không xét MaLHP (thêm mới)
+    IF EXISTS (
+        SELECT 1 FROM LichHoc
+        WHERE Ngay = @Ngay AND MaPH = @MaPH
+    )
+        THROW 73005, 'Phòng học đã có lớp khác trong cùng thời điểm', 1;
+
+    -- kiểm tra giảng viên trùng lịch:
+    -- 1) lấy danh sách MaGV đang dạy @MaLHP (nếu không có GV thì skip)
+    DECLARE @HasGV INT;
+    SELECT @HasGV = COUNT(*) FROM GiangDay WHERE MaLHP = @MaLHP;
+
+    IF @HasGV > 0
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM GiangDay gdExisting   -- GV của các lớp khác
+            JOIN LichHoc lhExisting ON gdExisting.MaLHP = lhExisting.MaLHP
+            WHERE gdExisting.MaGV IN (SELECT MaGV FROM GiangDay WHERE MaLHP = @MaLHP)
+              AND lhExisting.Ngay = @Ngay
+              AND gdExisting.MaLHP <> @MaLHP
+        )
+            THROW 73006, 'Giảng viên đã có lịch dạy trùng giờ', 1;
+    END
+
+    -- nếu ok -> insert
+    INSERT INTO LichHoc (MaLHP, Ngay, MaPH, SoTiet)
+    VALUES (@MaLHP, @Ngay, @MaPH, @SoTiet);
+END;
+
+CREATE OR ALTER PROCEDURE sp_SuaLichHoc
+    @MaLichHoc INT,
+    @MaLHP VARCHAR(10),
+    @Ngay DATE,
+    @MaPH VARCHAR(10),
+    @SoTiet INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM LichHoc WHERE MaLichHoc = @MaLichHoc)
+        THROW 73007, 'Lịch học không tồn tại', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM LopHocPhan WHERE MaLHP = @MaLHP)
+        THROW 73001, 'Lớp học phần không tồn tại', 1;
+
+    IF NOT EXISTS (SELECT 1 FROM PhongHoc WHERE MaPH = @MaPH)
+        THROW 73002, 'Phòng học không tồn tại', 1;
+
+    DECLARE @SiSo INT, @SucChua INT;
+    SELECT @SiSo = SiSo FROM LopHocPhan WHERE MaLHP = @MaLHP;
+    SELECT @SucChua = SucChua FROM PhongHoc WHERE MaPH = @MaPH;
+
+    IF @SucChua < @SiSo
+        THROW 73003, 'Phòng học không đủ sức chứa cho lớp này', 1;
+
+    IF (@SoTiet % 2) <> 0
+        THROW 73004, 'Số tiết phải là bội số của 2', 1;
+
+    -- trùng phòng: loại trừ chính MaLichHoc này
+    IF EXISTS (
+        SELECT 1 FROM LichHoc
+        WHERE Ngay = @Ngay AND MaPH = @MaPH AND MaLichHoc <> @MaLichHoc
+    )
+        THROW 73005, 'Phòng học đã có lớp khác trong cùng thời điểm', 1;
+
+    -- kiểm tra giảng viên trùng lịch: lấy danh sách GV của @MaLHP (nếu có)
+    DECLARE @HasGV INT;
+    SELECT @HasGV = COUNT(*) FROM GiangDay WHERE MaLHP = @MaLHP;
+
+    IF @HasGV > 0
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM GiangDay gdExisting
+            JOIN LichHoc lhExisting ON gdExisting.MaLHP = lhExisting.MaLHP
+            WHERE gdExisting.MaGV IN (SELECT MaGV FROM GiangDay WHERE MaLHP = @MaLHP)
+              AND lhExisting.Ngay = @Ngay
+              AND (gdExisting.MaLHP <> @MaLHP OR lhExisting.MaLichHoc <> @MaLichHoc)
+        )
+            THROW 73006, 'Giảng viên đã có lịch dạy trùng giờ', 1;
+    END
+
+    -- update
+    UPDATE LichHoc
+    SET MaLHP = @MaLHP, Ngay = @Ngay, MaPH = @MaPH, SoTiet = @SoTiet
+    WHERE MaLichHoc = @MaLichHoc;
+END;
+
+
+CREATE OR ALTER PROCEDURE sp_XoaLichHoc
+    @MaLichHoc INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM LichHoc WHERE MaLichHoc = @MaLichHoc)
+        THROW 73007, 'Lịch học không tồn tại', 1;
+
+    DELETE FROM LichHoc WHERE MaLichHoc = @MaLichHoc;
+END;
+
+CREATE OR ALTER PROCEDURE sp_GetAllLichHoc
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT * FROM LichHoc;
+END;
+
