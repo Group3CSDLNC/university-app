@@ -2,22 +2,33 @@ package com.example.university.web.controller;
 
 import com.example.university.model.Khoa;
 import com.example.university.service.KhoaService;
+import com.example.university.service.SessionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/api/khoa")
+@Controller
 public class KhoaController {
 
     @Autowired
-    KhoaService khoaService;
+    private KhoaService khoaService;
 
-    @GetMapping("/getAll")
-    public List<Khoa> getAll() {
-        return khoaService.getAll();
+    @Autowired
+    private SessionService sessionService;
+
+    @GetMapping("/khoa/list")
+    public String listKhoa(Model model) {
+        if (!sessionService.isLoggedIn()) {
+            return "redirect:/login";
+        }
+
+        List<Khoa> khoaList = khoaService.getAll();
+        model.addAttribute("khoaList", khoaList);
+        model.addAttribute("sessionService", sessionService);
+
+        return "khoa/list"; // view thymeleaf
     }
 }

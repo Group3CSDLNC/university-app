@@ -16,5 +16,19 @@ public class KhoaService {
     public List<Khoa> getAll() {
         return repo.findAll();
     }
+    public void addKhoa(Khoa khoa) {
+        repo.addKhoa(khoa);
+    }
 
+    public void updateKhoa(Khoa khoa) {
+        repo.updateKhoa(khoa);
+    }
+
+    public void deleteKhoa(int maKhoa) {
+        repo.deleteKhoa(maKhoa);
+    }
+
+    public Khoa getById(int maKhoa) {
+        return repo.getById(maKhoa);
+    }
 }

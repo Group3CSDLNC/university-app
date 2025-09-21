@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Hệ thống quản lý trung tâm đào tạo</title>
+    <title>Admin Dashboard</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <style>
         .navbar-brand { font-weight: bold; }
@@ -22,34 +22,34 @@
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mr-auto">
             <li class="nav-item">
-                <a class="nav-link active" href="/dashboard/admin">Home</a>
+                <a class="nav-link active" href="/dashboard/admin">Dashboard</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/admin/ctdt">CTDT</a>
+                <a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/admin/khoahoc">Khoahoc</a>
+                <a class="nav-link" href="/khoa/list">Khoa</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/admin/hocphan">Hocphan</a>
+                <a class="nav-link" href="/hocPhan/hocphan_list">Học phần</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/admin/hocvien">Hocvien</a>
+                <a class="nav-link" href="/hoc-vien/list">Học viên</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/admin/nhanvien">Nhanvien</a>
+                <a class="nav-link" href="/nhan-vien/list">Nhân viên</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/admin/giangvien">Giangvien</a>
+                <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/admin/phonghoc">Phonghoc</a>
+                <a class="nav-link" href="/phong-hoc/list">Phòng học</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/admin/diemthi">Diemthi</a>
+                <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/admin/luong">Luong</a>
+                <a class="nav-link" href="/luong/list">Lương</a>
             </li>
         </ul>
         <ul class="navbar-nav">
@@ -115,16 +115,16 @@
                     <h4>Hành động nhanh</h4>
                     <div class="row">
                         <div class="col-md-2">
-                            <a href="/admin/hoc-vien/add" class="btn btn-outline-primary btn-block mb-2">Thêm Học viên</a>
+                            <a href="/hoc-vien/list/add" class="btn btn-outline-primary btn-block mb-2">Thêm Học viên</a>
                         </div>
                         <div class="col-md-2">
-                            <a href="/admin/nhan-vien/add" class="btn btn-outline-success btn-block mb-2">Thêm Nhân viên</a>
+                            <a href="/nhan-vien/list/add" class="btn btn-outline-success btn-block mb-2">Thêm Nhân viên</a>
                         </div>
                         <div class="col-md-2">
-                            <a href="/admin/chuong-trinh-dao-tao" class="btn btn-outline-info btn-block mb-2">Quản lý CTĐT</a>
+                            <a href="/ctdt/list" class="btn btn-outline-info btn-block mb-2">Quản lý CTĐT</a>
                         </div>
                         <div class="col-md-2">
-                            <a href="/admin/baocao" class="btn btn-outline-warning btn-block mb-2">Báo cáo</a>
+                            <a href="/bao-cao/list" class="btn btn-outline-warning btn-block mb-2">Báo cáo</a>
                         </div>
                     </div>
                 </div>

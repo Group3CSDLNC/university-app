@@ -1,31 +1,86 @@
-<!doctype html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danh sách Học phần</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .search-add-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-input { flex: 1; }
+        .loading { display: none; text-align: center; color: #6c757d; margin-bottom: 10px; }
+    </style>
 </head>
 <body>
 
-<div class="container mt-5">
-    <h2 class="mb-4">Danh sách Học phần</h2>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý trung tâm đào tạo</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a></li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/khoa/list">Khoa</a>
+            </li>
+            <li class="nav-item active" th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}">
+                <a class="nav-link" href="/hocPhan/hocphan_list">Học phần</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}" class="nav-item">
+                <a class="nav-link" href="/hoc-vien/list">Học viên</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/nhan-vien/list">Nhân viên</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'GiangVien'}" class="nav-item">
+                <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'SinhVien'}" class="nav-item">
+                <a class="nav-link" href="/khoa/list">Khoa</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'GiangVien' or sessionService.currentUser.loaiTaiKhoan == 'SinhVien')}" class="nav-item">
+                <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'GiangVien'}" class="nav-item">
+                <a class="nav-link" href="/luong/list">Lương</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                    <span id="userName" th:text="${sessionService.currentUser != null ? sessionService.currentUser.tenDangNhap : ''}"></span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="/profile">Hồ sơ</a>
+                    <a class="dropdown-item" href="/logout">Đăng xuất</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
 
-    <!-- Form tìm kiếm -->
-    <form id="searchForm" class="form-inline mb-3" th:action="@{/hocPhan}" method="get">
-        <input type="text" name="keyword" placeholder="Tìm theo tên học phần"
-               class="form-control mr-2" th:value="${keyword}">
-        <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+<!-- Main Content -->
+<div class="container mt-4">
+    <h2>Danh sách Học phần</h2>
+
+    <!-- Search + Add -->
+    <form id="searchForm" class="d-flex w-100">
+        <input type="text" id="keyword" placeholder="Tìm theo tên học phần"
+               class="form-control search-input" th:value="${keyword}">
+        <button type="button" class="btn btn-outline-secondary" onclick="searchHP()">Tìm</button>
+        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#hocPhanModal">Thêm Học phần</button>
     </form>
 
-    <!-- Nút Thêm -->
-    <button class="btn btn-success mb-3" id="btnAdd">Thêm Học phần</button>
+    <div id="loading" class="loading">Đang tải...</div>
 
-    <!-- Bảng danh sách -->
-    <table class="table table-bordered">
+    <!-- Table -->
+    <table class="table table-striped">
         <thead>
         <tr>
-            <th>STT</th>
+            <th>Mã HP</th>
             <th>Tên học phần</th>
             <th>Tín chỉ</th>
             <th>Số tiết thực hành</th>
@@ -105,6 +160,8 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
 <script>
     const hocphanModal = document.getElementById("hocphanModal");
     const hocphanForm = document.getElementById("hocphanForm");
@@ -135,6 +192,34 @@
             })
             .catch(err => alert(err.message));
     });
+
+    function searchHP() {
+        const keyword = document.getElementById("keyword").value;
+        fetch(`/api/hocPhan/search?keyword=${encodeURIComponent(keyword)}`)
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector("table tbody");
+                tbody.innerHTML = "";
+                data.forEach(hp => {
+                    tbody.innerHTML += `
+                    <tr>
+                        <td>${hp.maHP}</td>
+                        <td>${hp.tenHP}</td>
+                        <td>${hp.soTinChi}</td>
+                        <td>${hp.tietTH}</td>
+                        <td>${hp.tietLT}</td>
+                        <td>${hp.tenCTDT || ""}</td>
+                        <td>${hp.tenTienQuyet || ""}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary btnEdit" data-id="${hp.maHP}">Sửa</button>
+                            <button class="btn btn-sm btn-danger btnDelete" data-id="${hp.maHP}">Xóa</button>
+                        </td>
+                    </tr>
+                `;
+                });
+            })
+            .catch(err => alert("Lỗi khi tìm kiếm: " + err));
+    }
 
     // Sửa học phần
     document.querySelectorAll(".btnEdit").forEach(btn => {

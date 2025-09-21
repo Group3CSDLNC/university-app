@@ -94,5 +94,10 @@ public class HocPhanApiController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
+
+    @GetMapping("/search")
+    public List<HocPhan> searchHocPhan(@RequestParam(required = false) String keyword) {
+        return hocPhanService.searchHocPhan(keyword);
+    }
 }
 
