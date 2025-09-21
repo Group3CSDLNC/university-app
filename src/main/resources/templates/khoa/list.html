@@ -1,17 +1,271 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:replace="layout :: layout (~{::body})">
-  <div th:fragment="content">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách Khoa</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .search-add-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-input { flex: 1; }
+        .loading { display: none; text-align: center; color: #6c757d; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý trung tâm đào tạo</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a></li>
+            <li class="nav-item active"><a class="nav-link" href="/khoa/list">Khoa</a></li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}" class="nav-item">
+                <a class="nav-link" href="/hocPhan/hocphan_list">Học phần</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}" class="nav-item">
+                <a class="nav-link" href="/hoc-vien/list">Học viên</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/nhan-vien/list">Nhân viên</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'GiangVien'}" class="nav-item">
+                <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'SinhVien'}" class="nav-item">
+                <a class="nav-link" href="/khoa/list">Khoa</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'GiangVien' or sessionService.currentUser.loaiTaiKhoan == 'SinhVien')}" class="nav-item">
+                <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'GiangVien'}" class="nav-item">
+                <a class="nav-link" href="/luong/list">Lương</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                    <span id="userName" th:text="${sessionService.currentUser != null ? sessionService.currentUser.tenDangNhap : ''}"></span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="/profile">Hồ sơ</a>
+                    <a class="dropdown-item" href="/logout">Đăng xuất</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-4">
     <h2>Danh sách Khoa</h2>
-    <table class="table table-bordered">
-      <thead><tr><th>MaKhoa</th><th>TenKhoa</th><th>Email</th><th>Chi tiết</th></tr></thead>
-      <tbody>
-        <tr th:each="k : ${khoas}">
-          <td th:text="${k.maKhoa}">1</td>
-          <td th:text="${k.tenKhoa}">CNTT</td>
-          <td th:text="${k.email}">cntt@univ.edu</td>
-          <td><a th:href="@{'/khoa/' + ${k.maKhoa}}">Xem</a></td>
+
+    <!-- Search + Add -->
+    <div class="search-add-group mb-3">
+        <input type="text" name="keyword" class="form-control search-input" placeholder="Tìm kiếm theo Tên hoặc Email">
+        <button class="btn btn-outline-secondary" onclick="searchKhoa()">Tìm</button>
+        <button th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}"
+                class="btn btn-success" data-toggle="modal" data-target="#addKhoaModal">Thêm Khoa</button>
+    </div>
+
+    <div id="loading" class="loading">Đang tải...</div>
+
+    <!-- Table -->
+    <table class="table table-striped" id="khoaTable">
+        <thead>
+        <tr>
+            <th>Mã Khoa</th>
+            <th>Tên Khoa</th>
+            <th>Email</th>
+            <th th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}">Hành động</th>
         </tr>
-      </tbody>
+        </thead>
+        <tbody>
+        <tr th:each="khoa : ${khoaList}">
+            <td th:text="${khoa.maKhoa}"></td>
+            <td th:text="${khoa.tenKhoa}"></td>
+            <td th:text="${khoa.email}"></td>
+            <td th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}">
+                <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#editKhoaModal"
+                        th:attr="data-ma-khoa=${khoa.maKhoa}">Sửa</button>
+                <button class="btn btn-danger btn-sm" th:onclick="|deleteKhoa(${khoa.maKhoa})|">Xóa</button>
+            </td>
+        </tr>
+        </tbody>
     </table>
-  </div>
+</div>
+
+<!-- Add Khoa Modal -->
+<div class="modal fade" id="addKhoaModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm Khoa</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addKhoaForm">
+                    <div class="form-group">
+                        <label>Tên Khoa</label>
+                        <input type="text" class="form-control" id="addTenKhoa" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-control" id="addEmail">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="addKhoa()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Khoa Modal -->
+<div class="modal fade" id="editKhoaModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sửa Khoa</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editKhoaForm">
+                    <input type="hidden" id="editMaKhoa">
+                    <div class="form-group">
+                        <label>Tên Khoa</label>
+                        <input type="text" class="form-control" id="editTenKhoa" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-control" id="editEmail">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="updateKhoa()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const currentUser = /*[[${sessionService.currentUser}]]*/ null;
+
+    $('#editKhoaModal').on('show.bs.modal', function (event) {
+        const button = $(event.relatedTarget);
+        const maKhoa = button.data('ma-khoa');
+        const modal = $(this);
+        modal.find('#editMaKhoa').val(maKhoa);
+
+        fetch(`/api/khoa/${maKhoa}`)
+            .then(res => res.json())
+            .then(khoa => {
+                modal.find('#editTenKhoa').val(khoa.tenKhoa || '');
+                modal.find('#editEmail').val(khoa.email || '');
+            })
+            .catch(err => alert('Lỗi khi tải dữ liệu: ' + err));
+    });
+
+    function searchKhoa() {
+        const keyword = document.querySelector('input[name="keyword"]').value;
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block';
+        fetch(`/api/khoa/search?keyword=${encodeURIComponent(keyword)}`)
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector('#khoaTable tbody');
+                tbody.innerHTML = '';
+                data.forEach(khoa => {
+                    const isAdmin = currentUser && currentUser.loaiTaiKhoan === 'Admin';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${khoa.maKhoa}</td>
+                        <td>${khoa.tenKhoa || 'N/A'}</td>
+                        <td>${khoa.email || '-'}</td>
+                        ${isAdmin ? `
+                        <td>
+                            <button class="btn btn-warning btn-sm" data-toggle="modal" data-target="#editKhoaModal" data-ma-khoa="${khoa.maKhoa}">Sửa</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteKhoa(${khoa.maKhoa})">Xóa</button>
+                        </td>` : ''}
+                    `;
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(err => alert('Lỗi: ' + err))
+            .finally(() => loading.style.display = 'none');
+    }
+
+    function addKhoa() {
+        const tenKhoa = document.getElementById('addTenKhoa').value.trim();
+        const email = document.getElementById('addEmail').value.trim();
+
+        if (!tenKhoa) {
+            alert('Tên Khoa không được để trống!');
+            return;
+        }
+
+        const khoa = { tenKhoa, email };
+        fetch('/api/khoa/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(khoa)
+        })
+            .then(res => res.text())
+            .then(data => {
+                alert(data);
+                $('#addKhoaModal').modal('hide');
+                window.location.reload();
+            })
+            .catch(err => alert('Lỗi: ' + err));
+    }
+
+    function updateKhoa() {
+        const maKhoa = parseInt(document.getElementById('editMaKhoa').value);
+        const tenKhoa = document.getElementById('editTenKhoa').value.trim();
+        const email = document.getElementById('editEmail').value.trim();
+
+        if (isNaN(maKhoa) || !tenKhoa) {
+            alert('Dữ liệu không hợp lệ!');
+            return;
+        }
+
+        const khoa = { maKhoa, tenKhoa, email };
+        fetch('/api/khoa/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(khoa)
+        })
+            .then(res => res.text())
+            .then(data => {
+                alert(data);
+                $('#editKhoaModal').modal('hide');
+                window.location.reload();
+            })
+            .catch(err => alert('Lỗi: ' + err));
+    }
+
+    function deleteKhoa(maKhoa) {
+        if (confirm('Bạn có chắc muốn xóa Khoa này?')) {
+            fetch(`/api/khoa/delete/${maKhoa}`, { method: 'DELETE' })
+                .then(res => res.text())
+                .then(data => {
+                    alert(data);
+                    window.location.reload();
+                })
+                .catch(err => alert('Lỗi: ' + err));
+        }
+    }
+</script>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+</body>
 </html>

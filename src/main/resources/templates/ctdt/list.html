@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách Chương trình đào tạo</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .search-add-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-input { flex: 1; }
+        .loading { display: none; text-align: center; color: #6c757d; margin-bottom: 10px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal.show { display: block; }
+        .modal-dialog { margin: 1.75rem auto; max-width: 500px; }
+        .modal-content { background: #fff; border-radius: 0.3rem; }
+        .modal-header, .modal-footer { padding: 1rem; border-bottom: 1px solid #dee2e6; }
+        .modal-body { padding: 1rem; }
+        .close { font-size: 1.5rem; line-height: 1; color: #000; opacity: 0.5; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý trung tâm đào tạo</a>
+    <button class="navbar-toggler" type="button" onclick="document.getElementById('navbarNav').classList.toggle('show')">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item"><a class="nav-link" href="/dashboard">Dashboard</a></li>
+            <li class="nav-item active"><a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a></li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/khoa/list">Khoa</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}" class="nav-item">
+                <a class="nav-link" href="/hocPhan/hocphan_list">Học phần</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}" class="nav-item">
+                <a class="nav-link" href="/hoc-vien/list">Học viên</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/nhan-vien/list">Nhân viên</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'GiangVien'}" class="nav-item">
+                <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'SinhVien'}" class="nav-item">
+                <a class="nav-link" href="/khoa/list">Khoa</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'GiangVien' or sessionService.currentUser.loaiTaiKhoan == 'SinhVien')}" class="nav-item">
+                <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'GiangVien'}" class="nav-item">
+                <a class="nav-link" href="/luong/list">Lương</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" onclick="document.querySelector('.dropdown-menu').classList.toggle('show')">
+                    <span id="userName" th:text="${sessionService.currentUser != null ? sessionService.currentUser.tenDangNhap : ''}"></span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="/profile">Hồ sơ</a>
+                    <a class="dropdown-item" href="/logout">Đăng xuất</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2>Danh sách Chương trình đào tạo</h2>
+
+    <!-- Filter Form -->
+    <form id="filterForm" class="mb-3" th:action="@{/ctdt/list}" method="get">
+        <div class="row">
+            <div class="col-md-3">
+                <select name="maKhoa" class="form-control">
+                    <option value="">Chọn khoa</option>
+                    <option th:each="khoa : ${khoas}" th:value="${khoa.maKhoa}" th:text="${khoa.tenKhoa}" th:selected="${khoa.maKhoa == maKhoa}"></option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="namHoc" class="form-control">
+                    <option value="">Chọn năm học</option>
+                    <option th:each="y : ${years}" th:value="${y}" th:text="${y}" th:selected="${y == namHoc}"></option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="maCN" class="form-control">
+                    <option value="">Chọn chuyên ngành</option>
+                    <option th:each="cn : ${cns}" th:value="${cn.maCN}" th:text="${cn.tenCN}" th:selected="${cn.maCN == maCN}"></option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="maNVQuanLy" class="form-control">
+                    <option value="">Chọn nhân viên quản lý</option>
+                    <option th:each="nv : ${nhanViens}" th:value="${nv.maNV}" th:text="${nv.hoTen}" th:selected="${nv.maNV == maNVQuanLy}"></option>
+                </select>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Lọc</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Search + Add -->
+    <div class="search-add-group mb-3">
+        <input type="text" name="keyword" class="form-control search-input" placeholder="Tìm kiếm (Tên hoặc Năm học)">
+        <button class="btn btn-outline-secondary" id="searchBtn">Tìm</button>
+        <button th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}"
+                class="btn btn-success" onclick="document.getElementById('addCTDTModal').classList.add('show')">Thêm CTDT</button>
+    </div>
+
+    <div id="loading" class="loading">Đang tải...</div>
+
+    <!-- Table -->
+    <table class="table table-striped" id="ctdtTable">
+        <thead>
+        <tr>
+            <th>Mã CTDT</th>
+            <th>Tên CTDT</th>
+            <th>Tổng Tín Chỉ</th>
+            <th>Chuyên Ngành</th>
+            <th>Năm Học</th>
+            <th>Hành động</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="ctdt : ${ctdtList}">
+            <td th:text="${ctdt.maCTDT}"></td>
+            <td th:text="${ctdt.tenCTDT}"></td>
+            <td th:text="${ctdt.tongTinChi}"></td>
+            <td th:text="${cnMap[ctdt.maCN] != null ? cnMap[ctdt.maCN] : ctdt.maCN}"></td>
+            <td th:text="${ctdt.namHoc}"></td>
+            <td>
+                <button th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}"
+                        class="btn btn-warning btn-sm edit-btn" th:attr="data-ma-ctdt=${ctdt.maCTDT}">Sửa</button>
+                <button th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}"
+                        class="btn btn-danger btn-sm delete-btn" th:attr="data-ma-ctdt=${ctdt.maCTDT}">Xóa</button>
+                <button th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}"
+                        class="btn btn-info btn-sm assign-btn" th:attr="data-ma-ctdt=${ctdt.maCTDT}" onclick="document.getElementById('assignCTDTModal').classList.add('show')">Gán NV</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Add CTDT Modal -->
+<div class="modal fade" id="addCTDTModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Thêm Chương trình đào tạo</h5>
+                <button type="button" class="close" onclick="document.getElementById('addCTDTModal').classList.remove('show')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addCTDTForm">
+                    <div class="form-group">
+                        <label>Tên CTDT</label>
+                        <input type="text" class="form-control" id="addTenCTDT" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tổng Tín Chỉ</label>
+                        <input type="number" class="form-control" id="addTongTinChi" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Chuyên Ngành</label>
+                        <select class="form-control" id="addMaCN" required>
+                            <option value="">Chọn chuyên ngành</option>
+                            <option th:each="cn : ${cns}"
+                                    th:value="${cn.maCN}"
+                                    th:text="${cn.tenCN != null ? cn.tenCN : 'N/A'}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Năm Học</label>
+                        <select class="form-control" id="addNamHoc" required>
+                            <option value="">Chọn năm học</option>
+                            <option th:each="y : ${years}"
+                                    th:value="${y}"
+                                    th:text="${y}">
+                            </option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('addCTDTModal').classList.remove('show')">Đóng</button>
+                <button type="button" class="btn btn-primary" id="saveAddCTDTBtn">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit CTDT Modal -->
+<div class="modal fade" id="editCTDTModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sửa Chương trình đào tạo</h5>
+                <button type="button" class="close" onclick="document.getElementById('editCTDTModal').classList.remove('show')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editCTDTForm">
+                    <input type="hidden" id="editMaCTDT">
+                    <div class="form-group">
+                        <label>Tên CTDT</label>
+                        <input type="text" class="form-control" id="editTenCTDT" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tổng Tín Chỉ</label>
+                        <input type="number" class="form-control" id="editTongTinChi" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Chuyên Ngành</label>
+                        <select class="form-control" id="editMaCN" required>
+                            <option value="">Chọn chuyên ngành</option>
+                            <option th:each="cn : ${cns}"
+                                    th:value="${cn.maCN}"
+                                    th:text="${cn.tenCN != null ? cn.tenCN : 'N/A'}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Năm Học</label>
+                        <select class="form-control" id="editNamHoc" required>
+                            <option value="">Chọn năm học</option>
+                            <option th:each="y : ${years}"
+                                    th:value="${y}"
+                                    th:text="${y}">
+                            </option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('editCTDTModal').classList.remove('show')">Đóng</button>
+                <button type="button" class="btn btn-primary" id="saveEditCTDTBtn">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Nhan Vien Modal -->
+<div class="modal fade" id="assignCTDTModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Gán Nhân viên Quản lý</h5>
+                <button type="button" class="close" onclick="document.getElementById('assignCTDTModal').classList.remove('show')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="assignCTDTForm">
+                    <input type="hidden" id="assignMaCTDT">
+                    <div class="form-group">
+                        <label>Nhân viên</label>
+                        <select class="form-control" id="assignMaNV" required>
+                            <option value="">Chọn nhân viên</option>
+                            <option th:each="nv : ${nhanViens}"
+                                    th:value="${nv.maNV}"
+                                    th:text="${nv.hoTen != null ? nv.hoTen : 'N/A'}">
+                            </option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('assignCTDTModal').classList.remove('show')">Đóng</button>
+                <button type="button" class="btn btn-primary" id="saveAssignCTDTBtn">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const currentUser = /*[[${sessionService.currentUser}]]*/ null;
+    const cnMap = /*[[${cnMap}]]*/ {};
+    if (!currentUser) {
+        window.location.href = '/login';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search button
+        document.getElementById('searchBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            searchCTDT();
+        });
+
+        // Add CTDT save button
+        document.getElementById('saveAddCTDTBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            addCTDT();
+        });
+
+        // Edit CTDT save button
+        document.getElementById('saveEditCTDTBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            updateCTDT();
+        });
+
+        // Assign Nhan Vien save button
+        document.getElementById('saveAssignCTDTBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            assignNhanVien();
+        });
+
+        // Edit and Delete buttons (delegated)
+        document.getElementById('ctdtTable').addEventListener('click', function(e) {
+            if (e.target.classList.contains('edit-btn')) {
+                e.preventDefault();
+                const maCTDT = e.target.dataset.maCtdt;
+                const modal = document.getElementById('editCTDTModal');
+                const loading = document.getElementById('loading');
+                loading.style.display = 'block';
+
+                fetch(`/api/ctdt/${maCTDT}`)
+                    .then(res => {
+                        if (!res.ok) {
+                            return res.text().then(text => { throw new Error(text || 'Không tìm thấy CTDT'); });
+                        }
+                        return res.json();
+                    })
+                    .then(ctdt => {
+                        modal.querySelector('#editMaCTDT').value = maCTDT;
+                        modal.querySelector('#editTenCTDT').value = ctdt.tenCTDT || '';
+                        modal.querySelector('#editTongTinChi').value = ctdt.tongTinChi || '';
+                        modal.querySelector('#editMaCN').value = ctdt.maCN || '';
+                        modal.querySelector('#editNamHoc').value = ctdt.namHoc || '';
+                        modal.classList.add('show');
+                        loading.style.display = 'none';
+                    })
+                    .catch(err => {
+                        loading.style.display = 'none';
+                        if (err.message.includes('Chua dang nhap')) {
+                            alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+                            window.location.href = '/login';
+                        } else {
+                            alert('Lỗi khi tải dữ liệu: ' + err.message);
+                        }
+                    });
+            } else if (e.target.classList.contains('delete-btn')) {
+                const maCTDT = e.target.dataset.maCtdt;
+                deleteCTDT(maCTDT);
+            }
+        });
+
+        // Assign button (set maCTDT when opening modal)
+        document.getElementById('ctdtTable').addEventListener('click', function(e) {
+            if (!e.target.classList.contains('assign-btn')) return;
+
+            const maCTDT = e.target.dataset.maCtdt;
+            const modalAssign = document.getElementById('assignCTDTModal');
+            const selectNV = document.getElementById('assignMaNV');
+            const loading = document.getElementById('loading');
+
+            // Gán mã CTDT vào hidden input
+            document.getElementById('assignMaCTDT').value = maCTDT;
+
+            loading.style.display = 'block';
+
+            // --- CALL API ---
+            fetch(`/api/ctdt/${maCTDT}/quan-ly`)
+                .then(res => {
+                    if (!res.ok) return res.text().then(text => { throw new Error(text || 'Không tìm thấy nhân viên'); });
+                    return res.json();
+                })
+                .then(data => {
+                    // Nếu có nhân viên quản lý, tự động chọn option
+                    if (data && data.maNV) {
+                        if (Array.from(selectNV.options).some(opt => opt.value == data.maNV)) {
+                            selectNV.value = data.maNV; // chọn option tương ứng
+                        }
+                    }
+
+                    // Hiển thị modal
+                    modalAssign.classList.add('show');
+                    loading.style.display = 'none';
+                })
+                .catch(err => {
+                    loading.style.display = 'none';
+                    alert('Lỗi khi tải dữ liệu quản lý: ' + err.message);
+                });
+        });
+
+    });
+
+    function searchCTDT() {
+        const keyword = document.querySelector('input[name="keyword"]').value.trim();
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block';
+        fetch(`/api/ctdt/search?keyword=${encodeURIComponent(keyword)}`)
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(text => { throw new Error(text || 'Lỗi tìm kiếm CTDT'); });
+                }
+                return res.json();
+            })
+            .then(data => {
+                const tbody = document.querySelector('#ctdtTable tbody');
+                tbody.innerHTML = '';
+                data.forEach(ctdt => {
+                    const isAdmin = currentUser && currentUser.loaiTaiKhoan === 'Admin';
+                    const isAdminOrQuanLy = currentUser && (currentUser.loaiTaiKhoan === 'Admin' || currentUser.loaiTaiKhoan === 'QuanLy');
+                    const tenCN = cnMap[ctdt.maCN] || ctdt.maCN || 'N/A';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${ctdt.maCTDT || 'N/A'}</td>
+                        <td>${ctdt.tenCTDT || 'N/A'}</td>
+                        <td>${ctdt.tongTinChi || 0}</td>
+                        <td>${tenCN}</td>
+                        <td>${ctdt.namHoc || 'N/A'}</td>
+                        <td>
+                            ${isAdminOrQuanLy ? `<button class="btn btn-warning btn-sm edit-btn" data-ma-ctdt="${ctdt.maCTDT}">Sửa</button>` : ''}
+                            ${isAdmin ? `<button class="btn btn-danger btn-sm delete-btn" data-ma-ctdt="${ctdt.maCTDT}">Xóa</button>` : ''}
+                            ${isAdmin ? `<button class="btn btn-info btn-sm assign-btn" data-ma-ctdt="${ctdt.maCTDT}" onclick="document.getElementById('assignCTDTModal').classList.add('show')">Gán NV</button>` : ''}
+                        </td>`;
+                    tbody.appendChild(row);
+                });
+            })
+            .catch(err => {
+                if (err.message.includes('Chua dang nhap')) {
+                    alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+                    window.location.href = '/login';
+                } else {
+                    alert('Lỗi tìm kiếm: ' + err.message);
+                }
+            })
+            .finally(() => { loading.style.display = 'none'; });
+    }
+
+    function addCTDT() {
+        const tenCTDT = document.getElementById('addTenCTDT').value.trim();
+        const tongTinChi = document.getElementById('addTongTinChi').value;
+        const maCN = document.getElementById('addMaCN').value;
+        const namHoc = document.getElementById('addNamHoc').value;
+
+        if (!tenCTDT || !tongTinChi || !maCN || !namHoc) {
+            alert('Vui lòng điền đầy đủ thông tin');
+            return;
+        }
+
+        const data = {
+            tenCTDT,
+            tongTinChi: parseInt(tongTinChi),
+            maCN,
+            namHoc
+        };
+
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block';
+
+        fetch('/api/ctdt/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(text => { throw new Error(text || 'Lỗi khi thêm CTDT'); });
+                }
+                return res.text();
+            })
+            .then(message => {
+                alert(message);
+                document.getElementById('addCTDTModal').classList.remove('show');
+                document.getElementById('addCTDTForm').reset();
+                window.location.reload();
+            })
+            .catch(err => {
+                if (err.message.includes('Chua dang nhap')) {
+                    alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+                    window.location.href = '/login';
+                } else {
+                    alert('Lỗi: ' + err.message);
+                }
+            })
+            .finally(() => { loading.style.display = 'none'; });
+    }
+
+    function updateCTDT() {
+        const maCTDT = document.getElementById('editMaCTDT').value;
+        const tenCTDT = document.getElementById('editTenCTDT').value.trim();
+        const tongTinChi = document.getElementById('editTongTinChi').value;
+        const maCN = document.getElementById('editMaCN').value;
+        const namHoc = document.getElementById('editNamHoc').value;
+
+        if (!maCTDT || !tenCTDT || !tongTinChi || !maCN || !namHoc) {
+            alert('Vui lòng điền đầy đủ thông tin');
+            return;
+        }
+
+        const data = {
+            maCTDT: parseInt(maCTDT),
+            tenCTDT,
+            tongTinChi: parseInt(tongTinChi),
+            maCN,
+            namHoc
+        };
+
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block';
+
+        fetch('/api/ctdt/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(text => { throw new Error(text || 'Lỗi khi cập nhật CTDT'); });
+                }
+                return res.text();
+            })
+            .then(message => {
+                alert(message);
+                document.getElementById('editCTDTModal').classList.remove('show');
+                window.location.reload();
+            })
+            .catch(err => {
+                if (err.message.includes('Chua dang nhap')) {
+                    alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+                    window.location.href = '/login';
+                } else {
+                    alert('Lỗi: ' + err.message);
+                }
+            })
+            .finally(() => { loading.style.display = 'none'; });
+    }
+
+    function assignNhanVien() {
+        const maCTDT = document.getElementById('assignMaCTDT').value;
+        const maNV = document.getElementById('assignMaNV').value;
+
+        if (!maCTDT || !maNV) {
+            alert('Vui lòng chọn nhân viên');
+            return;
+        }
+
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block';
+
+        fetch(`/api/ctdt/assign?maCTDT=${maCTDT}&maNV=${maNV}`, {
+            method: 'POST'
+        })
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(text => { throw new Error(text || 'Lỗi khi gán nhân viên'); });
+                }
+                return res.text();
+            })
+            .then(message => {
+                alert(message);
+                document.getElementById('assignCTDTModal').classList.remove('show');
+                window.location.reload();
+            })
+            .catch(err => {
+                if (err.message.includes('Chua dang nhap')) {
+                    alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+                    window.location.href = '/login';
+                } else {
+                    alert('Lỗi: ' + err.message);
+                }
+            })
+            .finally(() => { loading.style.display = 'none'; });
+    }
+
+    function deleteCTDT(maCTDT) {
+        if (!confirm('Bạn có chắc muốn xóa CTDT này?')) {
+            return;
+        }
+
+        const loading = document.getElementById('loading');
+        loading.style.display = 'block';
+
+        fetch(`/api/ctdt/delete/${maCTDT}`, {
+            method: 'DELETE'
+        })
+            .then(res => {
+                if (!res.ok) {
+                    return res.text().then(text => { throw new Error(text || 'Lỗi khi xóa CTDT'); });
+                }
+                return res.text();
+            })
+            .then(message => {
+                alert(message);
+                window.location.reload();
+            })
+            .catch(err => {
+                if (err.message.includes('Chua dang nhap')) {
+                    alert('Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+                    window.location.href = '/login';
+                } else {
+                    alert('Lỗi: ' + err.message);
+                }
+            })
+            .finally(() => { loading.style.display = 'none'; });
+    }
+</script>
+</body>
+</html>

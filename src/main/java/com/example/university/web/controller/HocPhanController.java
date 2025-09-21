@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,7 +30,7 @@ public class HocPhanController {
     @Autowired
     private SessionService sessionService;
     // Danh sách
-    @GetMapping
+    @GetMapping("/hocphan_list")
     public String listHocPhan(Model model,
                               @RequestParam(value = "keyword", required = false) String keyword) {
         if (!sessionService.isLoggedIn()) {
@@ -55,8 +56,9 @@ public class HocPhanController {
         model.addAttribute("hocphanMap", hocphanMap);
         model.addAttribute("ctdts", ctdts);     // cho dropdown thêm/sửa
         model.addAttribute("ctdtMap", ctdtMap); // cho hiển thị list
+        model.addAttribute("sessionService", sessionService);
 
-        return "hocphan/hocphan_table";
+        return "hocphan/hocphan_list";
     }
 
     // Lấy 1 học phần theo id (dùng cho popup sửa)

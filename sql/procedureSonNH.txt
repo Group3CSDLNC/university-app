@@ -360,3 +360,75 @@ BEGIN
     WHERE TenDangNhap = @TenDangNhap AND MatKhau = @MatKhau;
 END;
 GO
+
+-- Thêm Khoa
+CREATE OR ALTER PROCEDURE sp_AddKhoa
+    @TenKhoa NVARCHAR(100),
+    @Email NVARCHAR(255)
+AS
+BEGIN
+    INSERT INTO Khoa (TenKhoa, Email)
+    VALUES (@TenKhoa, @Email);
+END
+GO
+
+-- Sửa Khoa
+CREATE OR ALTER PROCEDURE sp_UpdateKhoa
+    @MaKhoa INT,
+    @TenKhoa NVARCHAR(100),
+    @Email NVARCHAR(255)
+AS
+BEGIN
+    UPDATE Khoa
+    SET TenKhoa = @TenKhoa,
+        Email = @Email
+    WHERE MaKhoa = @MaKhoa;
+END
+GO
+
+-- Xóa Khoa
+CREATE OR ALTER PROCEDURE sp_DeleteKhoa
+    @MaKhoa INT
+AS
+BEGIN
+    DELETE FROM Khoa WHERE MaKhoa = @MaKhoa;
+END
+GO
+
+-- Lấy tất cả
+CREATE OR ALTER PROCEDURE sp_GetAllKhoa
+AS
+BEGIN
+    SELECT * FROM Khoa;
+END
+GO
+
+-- Lấy theo ID
+CREATE OR ALTER PROCEDURE sp_GetKhoaById
+    @MaKhoa INT
+AS
+BEGIN
+    SELECT * FROM Khoa WHERE MaKhoa = @MaKhoa;
+END
+GO
+
+CREATE OR ALTER PROCEDURE sp_GetQuanLyCTDT
+    @MaCTDT INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        ctdt.MaCTDT,
+        ctdt.TenCTDT,
+        nv.MaNV,
+        nv.HoTen,
+        nv.HocVi,
+        nv.VaiTro,
+        nv.Email
+    FROM CTDT_NhanVien ctdt_nv
+    INNER JOIN nhanvien nv ON ctdt_nv.MaNV = nv.MaNV
+    INNER JOIN chuongtrinhdaotao ctdt ON ctdt_nv.MaCTDT = ctdt.MaCTDT
+    WHERE ctdt.MaCTDT = @MaCTDT;
+END;
+GO

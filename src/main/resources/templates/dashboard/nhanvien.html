@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Giảng viên - Hệ thống quản lý trung tâm đào tạo</title>
+    <title>Giảng viên Dashboard</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <style>
         .navbar-brand { font-weight: bold; }
@@ -22,16 +22,19 @@
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mr-auto">
             <li class="nav-item">
-                <a class="nav-link active" href="/dashboard/giangvien">Home</a>
+                <a class="nav-link active" href="/dashboard/nhanvien">Dashboard</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/giangvien/giangvien">Giangvien</a>
+                <a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/giangvien/diemthi">Diemthi</a>
+                <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/giangvien/luong">Luong</a>
+                <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/luong/list">Lương</a>
             </li>
         </ul>
         <ul class="navbar-nav">
@@ -81,10 +84,10 @@
                     <h4>Hành động nhanh</h4>
                     <div class="row">
                         <div class="col-md-2">
-                            <a href="/giangvien/diemthi/nhap" class="btn btn-outline-primary btn-block mb-2">Nhập điểm</a>
+                            <a href="/diem-thi/list/nhap" class="btn btn-outline-primary btn-block mb-2">Nhập điểm</a>
                         </div>
                         <div class="col-md-2">
-                            <a href="/giangvien/luong/xem" class="btn btn-outline-success btn-block mb-2">Xem lương</a>
+                            <a href="/luong/list/xem" class="btn btn-outline-success btn-block mb-2">Xem lương</a>
                         </div>
                     </div>
                 </div>
