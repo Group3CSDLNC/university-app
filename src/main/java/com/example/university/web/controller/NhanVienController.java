@@ -44,4 +44,11 @@ public class NhanVienController {
         service.delete(id);
         return ResponseEntity.ok(Collections.singletonMap("message", "Xóa nhân viên thành công"));
     }
+
+    @GetMapping("/luong/{thang}/{nam}")
+    public ResponseEntity<?> danhSachLuongGV(@PathVariable int thang,
+                                             @PathVariable int nam) {
+        return ResponseEntity.ok(service.danhSachLuongGV(thang, nam));
+    }
+
 }

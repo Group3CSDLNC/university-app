@@ -1,0 +1,65 @@
+CREATE OR ALTER PROCEDURE sp_TinhLuong
+    @MaNV INT,
+    @Thang INT,
+    @Nam INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @Luong DECIMAL(18,2) = 0;
+
+    -- Kiểm tra nếu là giảng viên (tồn tại trong GiangDay)
+    IF EXISTS (SELECT 1 FROM GiangDay WHERE MaGV = @MaNV)
+    BEGIN
+        DECLARE @TongGio INT = 0;
+        DECLARE @WagePerHour DECIMAL(10,2) = 200000; -- ví dụ 200k/h
+
+        -- tính tổng số giờ dạy trong tháng (SoTietPhanCong/2 = số giờ vì 1 buổi=2 tiết)
+        SELECT @TongGio = ISNULL(SUM(gd.SoTietPhanCong),0) / 2
+        FROM GiangDay gd
+        JOIN LopHocPhan lhp ON gd.MaLHP = lhp.MaLHP
+        JOIN LichHoc lh ON lh.MaLHP = lhp.MaLHP
+        WHERE gd.MaGV = @MaNV
+          AND MONTH(lh.Ngay) = @Thang
+          AND YEAR(lh.Ngay) = @Nam;
+
+        -- kiểm tra có là trợ giảng không
+        IF EXISTS (SELECT 1 FROM GiangVien_TroGiang WHERE MaGV_TroGiang = @MaNV)
+            SET @Luong = (@TongGio * @WagePerHour) * 0.5; -- trợ giảng
+        ELSE
+            SET @Luong = @TongGio * @WagePerHour; -- giảng viên
+    END
+    ELSE
+    BEGIN
+        -- Nếu là nhân viên quản lý
+        DECLARE @LuongCoDinh DECIMAL(18,2) = 5000000;
+        DECLARE @SoSV INT = 0;
+        DECLARE @TienMoiSV DECIMAL(10,2) = 100000; -- giả định: 100k / sinh viên
+        DECLARE @SoNhanVienDuoiQuyen INT = 0;
+
+        -- số sinh viên thuộc CTDT mà nhân viên quản lý
+        SELECT @SoSV = ISNULL(SUM(svCount.SoLuong),0)
+        FROM (
+            SELECT COUNT(sv.MaSV) AS SoLuong
+            FROM CTDT_NhanVien cnv
+            JOIN ChuongTrinhDaoTao ctdt ON cnv.MaCTDT = ctdt.MaCTDT
+            JOIN ChuyenNganh cn ON ctdt.MaCN = cn.MaCN
+            JOIN SinhVien sv ON sv.MaCN = cn.MaCN
+            WHERE cnv.MaNV = @MaNV
+            GROUP BY cnv.MaCTDT
+        ) svCount;
+
+        -- số nhân viên cấp dưới
+        SELECT @SoNhanVienDuoiQuyen = COUNT(*)
+        FROM NhanVien_QuanLy
+        WHERE MaNV_QuanLy = @MaNV;
+
+        -- tính lương nhân viên quản lý
+        SET @Luong = @LuongCoDinh 
+                   + (@SoSV * @TienMoiSV)
+                   + (@LuongCoDinh * 0.05 * @SoNhanVienDuoiQuyen);
+    END
+
+    SELECT @MaNV AS MaNV, @Luong AS Luong;
+END;
+
