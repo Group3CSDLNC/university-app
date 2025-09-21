@@ -1,5 +1,6 @@
 package com.example.university.service;
 
+import com.example.university.dto.LuongGVDTO;
 import com.example.university.model.NhanVien;
 import com.example.university.repository.NhanVienRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,4 +23,8 @@ public class NhanVienService {
     public void update(NhanVien nv) { repo.update(nv); }
 
     public void delete(int maNV) { repo.delete(maNV); }
+
+    public List<LuongGVDTO> danhSachLuongGV(int thang, int nam) {
+        return repo.danhSachLuongGV(thang, nam);
+    }
 }

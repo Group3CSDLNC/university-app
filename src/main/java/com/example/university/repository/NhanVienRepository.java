@@ -1,5 +1,6 @@
 package com.example.university.repository;
 
+import com.example.university.dto.LuongGVDTO;
 import com.example.university.model.NhanVien;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -51,5 +52,19 @@ public class NhanVienRepository {
     public void delete(int maNV) {
         jdbcTemplate.update("EXEC sp_XoaNhanVien ?", maNV);
     }
+
+    public List<LuongGVDTO> danhSachLuongGV(int thang, int nam) {
+        String sql = "EXEC sp_DanhSachLuongGiangVien @Thang=?, @Nam=?";
+        return jdbcTemplate.query(sql, new Object[]{thang, nam},
+                (rs, rowNum) -> {
+                    LuongGVDTO dto = new LuongGVDTO();
+                    dto.setMaNV(rs.getInt("MaNV"));
+                    dto.setHoTen(rs.getString("HoTen"));
+                    dto.setTongGioDay(rs.getInt("TongGioDay"));
+                    dto.setLuong(rs.getBigDecimal("Luong"));
+                    return dto;
+                });
+    }
+
 }
 
