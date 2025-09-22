@@ -1,0 +1,69 @@
+CREATE OR ALTER PROCEDURE sp_AddLopHocPhan
+    @MaHP INT,
+    @HocKy INT,
+    @NamHoc VARCHAR(9),
+    @MaCTDT INT,
+    @SiSo INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Tạo sequence
+    DECLARE @Seq INT;
+    SELECT @Seq = ISNULL(MAX(CAST(RIGHT(MaLHP,3) AS INT)),0) + 1
+    FROM LopHocPhan
+    WHERE HocKy = @HocKy AND NamHoc = @NamHoc AND MaHP IN (
+        SELECT MaHP FROM HocPhan WHERE MaCTDT = @MaCTDT
+    );
+
+    DECLARE @MaLHP VARCHAR(20);
+    SET @MaLHP = CONCAT('CT', @MaCTDT, '_', @HocKy, '_', @NamHoc, '_', FORMAT(@Seq,'000'));
+
+    INSERT INTO LopHocPhan (MaLHP, MaHP, HocKy, NamHoc, SiSo)
+    VALUES (@MaLHP, @MaHP, @HocKy, @NamHoc, @SiSo);
+
+    SELECT @MaLHP AS MaLHP;
+END;
+
+CREATE OR ALTER PROCEDURE sp_UpdateLopHocPhan
+    @MaLHP VARCHAR(20),
+    @HocKy INT,
+    @NamHoc VARCHAR(9),
+    @SiSo INT
+AS
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM LopHocPhan WHERE MaLHP = @MaLHP)
+        THROW 51001, 'Lớp học phần không tồn tại', 1;
+
+    UPDATE LopHocPhan
+    SET HocKy = @HocKy, NamHoc = @NamHoc, SiSo = @SiSo
+    WHERE MaLHP = @MaLHP;
+END;
+
+CREATE OR ALTER PROCEDURE sp_DeleteLopHocPhan
+    @MaLHP VARCHAR(20)
+AS
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM LopHocPhan WHERE MaLHP = @MaLHP)
+        THROW 51001, 'Lớp học phần không tồn tại', 1;
+
+    DELETE FROM LopHocPhan WHERE MaLHP = @MaLHP;
+END;
+
+CREATE OR ALTER PROCEDURE sp_GetLopHocPhan
+    @HocKy INT = NULL,
+    @NamHoc VARCHAR(9) = NULL,
+    @MaCTDT INT = NULL,
+    @MaGV INT = NULL
+AS
+BEGIN
+    SELECT lhp.MaLHP, hp.TenHP, lhp.HocKy, lhp.NamHoc, lhp.SiSo
+    FROM LopHocPhan lhp
+    JOIN HocPhan hp ON lhp.MaHP = hp.MaHP
+    LEFT JOIN GiangDay gd ON lhp.MaLHP = gd.MaLHP
+    WHERE (@HocKy IS NULL OR lhp.HocKy = @HocKy)
+      AND (@NamHoc IS NULL OR lhp.NamHoc = @NamHoc)
+      AND (@MaCTDT IS NULL OR hp.MaCTDT = @MaCTDT)
+      AND (@MaGV IS NULL OR gd.MaGV = @MaGV);
+END;
+
