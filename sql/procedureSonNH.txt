@@ -89,7 +89,7 @@ BEGIN
         (@MaKhoa IS NULL OR k.MaKhoa = @MaKhoa)
         AND (@NamHoc IS NULL OR ctdt.NamHoc = @NamHoc)
         AND (@MaNVQuanLy IS NULL OR nv.MaNV = @MaNVQuanLy)
-    ORDER BY ctdt.NamHoc DESC, k.TenKhoa, cn.TenCN;
+    ORDER BY ctdt.MaCTDT DESC, k.TenKhoa, cn.TenCN;
 END;
 GO
 
@@ -101,9 +101,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SELECT MaCTDT, TenCTDT, TongTinChi, MaCN, NamHoc
-    FROM ChuongTrinhDaoTao
+    FROM ChuongTrinhDaoTao ctdt
     WHERE TenCTDT LIKE N'%' + @Keyword + '%'
-       OR NamHoc LIKE N'%' + @Keyword + '%';
+       OR NamHoc LIKE N'%' + @Keyword + '%'
+    ORDER BY ctdt.MaCTDT DESC;
+
 END
 GO
 
@@ -411,6 +413,22 @@ BEGIN
     SELECT * FROM Khoa WHERE MaKhoa = @MaKhoa;
 END
 GO
+
+CREATE OR ALTER PROCEDURE sp_SearchKhoa
+    @keyword NVARCHAR(255)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT MaKhoa, TenKhoa, Email
+    FROM Khoa
+    WHERE (@keyword IS NULL OR @keyword = '')
+       OR (TenKhoa LIKE '%' + @keyword + '%' OR Email LIKE '%' + @keyword + '%')
+    ORDER BY MaKhoa; -- sắp xếp theo ID tăng dần
+END;
+GO
+
+
 
 CREATE OR ALTER PROCEDURE sp_GetQuanLyCTDT
     @MaCTDT INT

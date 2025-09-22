@@ -51,4 +51,10 @@ public class KhoaApiController {
         response.put("message", "Xóa khoa thành công");
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/search")
+    public List<Khoa> search(@RequestParam(required = false) String keyword) {
+        return khoaService.searchKhoa(keyword);
+    }
+
 }

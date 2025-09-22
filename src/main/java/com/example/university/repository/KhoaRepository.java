@@ -46,4 +46,18 @@ public class KhoaRepository {
                 new BeanPropertyRowMapper<>(Khoa.class),
                 maKhoa);
     }
+
+    public List<Khoa> searchKhoa(String keyword) {
+        return jdbcTemplate.query(
+                "EXEC sp_SearchKhoa ?",
+                new Object[]{keyword},
+                (rs, rowNum) -> {
+                    Khoa khoa = new Khoa();
+                    khoa.setMaKhoa(rs.getInt("MaKhoa"));
+                    khoa.setTenKhoa(rs.getString("TenKhoa"));
+                    khoa.setEmail(rs.getString("Email"));
+                    return khoa;
+                }
+        );
+    }
 }
