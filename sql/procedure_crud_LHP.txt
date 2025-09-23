@@ -67,3 +67,53 @@ BEGIN
       AND (@MaGV IS NULL OR gd.MaGV = @MaGV);
 END;
 
+CREATE OR ALTER PROCEDURE sp_GetLopHocPhanBySV
+    @MaSV   INT,
+    @NamHoc NVARCHAR(9),
+    @HocKy  INT,
+    @MaCN   INT = NULL   -- tham số lọc chuyên ngành (có thể NULL = bỏ lọc)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        lhp.MaLHP,
+        hp.MaHP,
+        hp.TenHP,
+        hp.SoTinChi,
+        hp.TietLT,
+        hp.TietTH,
+        lhp.SiSo AS SiSoToiDa,
+        COUNT(DISTINCT dk.MaSV) AS SoLuongDaDangKy,
+        (lhp.SiSo - COUNT(DISTINCT dk.MaSV)) AS SlotConLai,
+        lhp.NamHoc,
+        lhp.HocKy,
+        MIN(ph.SoPhong) AS PhongHoc,             -- phòng học đại diện
+        MIN(lh.Ngay) AS NgayBatDau,              -- ngày bắt đầu môn học
+        MIN(lh.SoTiet) AS TietBatDau,            -- tiết học bắt đầu
+        gv.HoTen AS GiangVienChinh,
+        STRING_AGG(tg.HoTen, ', ') AS TroGiang,
+        cn.TenCN AS TenChuyenNganh,
+        ctdt.TenCTDT AS TenChuongTrinhDaoTao,
+        CASE WHEN dk_sv.MaSV IS NOT NULL THEN 1 ELSE 0 END AS IsDangKy -- đã đăng ký chưa
+    FROM LopHocPhan lhp
+    JOIN HocPhan hp ON lhp.MaHP = hp.MaHP
+    JOIN ChuongTrinhDaoTao ctdt ON hp.MaCTDT = ctdt.MaCTDT
+    JOIN ChuyenNganh cn ON ctdt.MaCN = cn.MaCN
+    LEFT JOIN GiangDay gd ON gd.MaLHP = lhp.MaLHP
+    LEFT JOIN NhanVien gv ON gd.MaGV = gv.MaNV
+    LEFT JOIN GiangVien_TroGiang gvtg ON gvtg.MaHP = hp.MaHP
+    LEFT JOIN NhanVien tg ON gvtg.MaGV_TroGiang = tg.MaNV
+    LEFT JOIN LichHoc lh ON lh.MaLHP = lhp.MaLHP
+    LEFT JOIN PhongHoc ph ON lh.MaPH = ph.MaPH
+    LEFT JOIN DangKy dk ON dk.MaLHP = lhp.MaLHP
+    LEFT JOIN DangKy dk_sv ON dk_sv.MaLHP = lhp.MaLHP AND dk_sv.MaSV = @MaSV -- check đã đăng ký
+    WHERE lhp.NamHoc = @NamHoc
+      AND lhp.HocKy = @HocKy
+      AND (@MaCN IS NULL OR ctdt.MaCN = @MaCN)
+    GROUP BY lhp.MaLHP, hp.MaHP, hp.TenHP, hp.SoTinChi, hp.TietLT, hp.TietTH,
+             lhp.SiSo, lhp.NamHoc, lhp.HocKy, gv.HoTen, cn.TenCN, ctdt.TenCTDT, dk_sv.MaSV
+    ORDER BY lhp.MaLHP;
+END;
+GO
+
