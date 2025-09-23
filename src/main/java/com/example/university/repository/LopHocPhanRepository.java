@@ -1,5 +1,6 @@
 package com.example.university.repository;
 
+import com.example.university.dto.LopHocPhanDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -30,5 +31,34 @@ public class LopHocPhanRepository {
     public List<Map<String, Object>> getLopHocPhan(Integer hocKy, String namHoc, Integer maCTDT, Integer maGV) {
         String sql = "EXEC sp_GetLopHocPhan @HocKy=?, @NamHoc=?, @MaCTDT=?, @MaGV=?";
         return jdbcTemplate.queryForList(sql, hocKy, namHoc, maCTDT, maGV);
+    }
+    public List<LopHocPhanDTO> getLopHocPhanBySV(int maSV, String namHoc, int hocKy, Integer maCN) {
+        return jdbcTemplate.query(
+                "EXEC sp_GetLopHocPhanBySV @MaSV=?, @NamHoc=?, @HocKy=?, @MaCN=?",
+                new Object[]{maSV, namHoc, hocKy, maCN},
+                (rs, rowNum) -> {
+                    LopHocPhanDTO dto = new LopHocPhanDTO();
+                    dto.setMaLHP(rs.getString("MaLHP"));
+                    dto.setMaHP(rs.getInt("MaHP"));
+                    dto.setTenHP(rs.getString("TenHP"));
+                    dto.setSoTinChi(rs.getInt("SoTinChi"));
+                    dto.setTietLT(rs.getInt("TietLT"));
+                    dto.setTietTH(rs.getInt("TietTH"));
+                    dto.setSiSoToiDa(rs.getInt("SiSoToiDa"));
+                    dto.setSoLuongDaDangKy(rs.getInt("SoLuongDaDangKy"));
+                    dto.setSlotConLai(rs.getInt("SlotConLai"));
+                    dto.setNamHoc(rs.getString("NamHoc"));
+                    dto.setHocKy(rs.getInt("HocKy"));
+                    dto.setPhongHoc(rs.getString("PhongHoc"));
+                    dto.setNgayBatDau(rs.getString("NgayBatDau"));
+                    dto.setTietBatDau(rs.getInt("TietBatDau"));
+                    dto.setGiangVienChinh(rs.getString("GiangVienChinh"));
+                    dto.setTroGiang(rs.getString("TroGiang"));
+                    dto.setTenChuyenNganh(rs.getString("TenChuyenNganh"));
+                    dto.setTenChuongTrinhDaoTao(rs.getString("TenChuongTrinhDaoTao"));
+                    dto.setIsDangKy(rs.getBoolean("IsDangKy"));
+                    return dto;
+                }
+        );
     }
 }

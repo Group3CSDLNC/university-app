@@ -13,4 +13,13 @@ public class DangKyService {
     public void dangKyHoc(int maSV, String maLHP) {
         repo.dangKyHoc(maSV, maLHP);
     }
+
+    public boolean huyDangKyHoc(int maSV, String maLHP) {
+        try {
+            repo.huyDangKyHoc(maSV, maLHP);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

@@ -13,4 +13,8 @@ public class DangKyRepository {
     public void dangKyHoc(int maSV, String maLHP) {
         jdbcTemplate.update("EXEC sp_DangKyHoc ?, ?", maSV, maLHP);
     }
+
+    public void huyDangKyHoc(int maSV, String maLHP) {
+        jdbcTemplate.update("EXEC sp_HuyDangKyHoc ?, ?", maSV, maLHP);
+    }
 }
