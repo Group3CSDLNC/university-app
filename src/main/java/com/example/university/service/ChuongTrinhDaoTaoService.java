@@ -16,22 +16,22 @@ public class ChuongTrinhDaoTaoService {
     private ChuongTrinhDaoTaoRepository repository;
 
     // Thêm CTDT
-    public void addChuongTrinh(String tenCTDT, Integer tongTinChi, Integer maCN, String namHoc) {
+    public void addChuongTrinh(String tenCTDT, Integer tongTinChi, Long maCN, String namHoc) {
         repository.addChuongTrinh(tenCTDT, tongTinChi, maCN, namHoc);
     }
 
     // Cập nhật CTDT
-    public void updateChuongTrinh(Integer maCTDT, String tenCTDT, Integer tongTinChi, Integer maCN, String namHoc) {
+    public void updateChuongTrinh(Long maCTDT, String tenCTDT, Integer tongTinChi, Long maCN, String namHoc) {
         repository.updateChuongTrinh(maCTDT, tenCTDT, tongTinChi, maCN, namHoc);
     }
 
     // Xóa CTDT
-    public void deleteChuongTrinh(Integer maCTDT) {
+    public void deleteChuongTrinh(Long maCTDT) {
         repository.deleteChuongTrinh(maCTDT);
     }
 
     // Gán nhân viên quản lý
-    public void assignNhanVienQuanLy(Integer maCTDT, Integer maNV) {
+    public void assignNhanVienQuanLy(Long maCTDT, Integer maNV) {
         repository.assignNhanVienQuanLy(maCTDT, maNV);
     }
 
@@ -47,7 +47,7 @@ public class ChuongTrinhDaoTaoService {
     public List<ChuongTrinhDaoTao> getAll(String keyWord) {
         return repository.getAll(keyWord);
     }
-    public Map<String, Object> getQuanLyCTDT(Integer maCTDT) {
+    public Map<String, Object> getQuanLyCTDT(Long maCTDT) {
         return repository.getQuanLyCTDT(maCTDT);
     }
 }

@@ -15,11 +15,23 @@ public class SinhVienService {
 
     public List<SinhVien> getAll() { return repo.findAll(); }
 
-    public SinhVien getById(int maSV) { return repo.findById(maSV); }
+    public SinhVien getById(Long maSV) { return repo.findById(maSV); }
 
-    public void add(SinhVien sv) { repo.add(sv); }
+    public void add(SinhVien sv) {
+        // 1. Lấy max sequence cho MaCN và NamHoc
+        Integer maxSeq = repo.maxSeq(sv);
+        if (maxSeq == null) maxSeq = 0;
+
+        // 2. Tính MaSV theo quy tắc: YY + MaCN(3 chữ số) + seq(3 chữ số)
+        int yearSuffix = sv.getNamHoc() % 100; // 2 số cuối năm
+        String maCNStr = String.format("%03d", sv.getMaCN());
+        String seqStr = String.format("%03d", maxSeq + 1);
+        sv.setMaSV(Long.parseLong(String.format("%02d%s%s", yearSuffix, maCNStr, seqStr)));
+
+        repo.add(sv);
+    }
 
     public void update(SinhVien sv) { repo.update(sv); }
 
-    public void delete(int maSV) { repo.delete(maSV); }
+    public void delete(Long maSV) { repo.delete(maSV); }
 }

@@ -29,7 +29,7 @@ public class DangKyHocPhanController {
     public String getAvailableLopHocPhan(
             @RequestParam(value = "namHoc", required = false) String namHoc,
             @RequestParam(value = "hocKy", required = false) Integer hocKy,
-            @RequestParam(value = "maCN", required = false) Integer maCN,
+            @RequestParam(value = "maCN", required = false) Long maCN,
             Model model) {
 
         if (!sessionService.isLoggedIn()) {
@@ -37,7 +37,7 @@ public class DangKyHocPhanController {
         }
 
         // Lấy sinh viên hiện tại từ session
-        Integer maSV = sessionService.getCurrentUser().getMaSV();
+        Long maSV = sessionService.getCurrentUser().getMaSV();
         SinhVien sv = sinhVienService.getById(maSV);
 
         // =======================

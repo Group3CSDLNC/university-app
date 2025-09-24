@@ -6,7 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ChuyenNganh {
-    private Integer maCN;
+    private Long maCN;
     private String tenCN;
     private Integer maKhoa;
 }

@@ -15,12 +15,12 @@ public class BaoCaoController {
     private BaoCaoService service;
 
     @GetMapping("/bangDiem/{maSV}/{maCTDT}")
-    public List<Map<String,Object>> bangDiem(@PathVariable int maSV, @PathVariable int maCTDT) {
+    public List<Map<String,Object>> bangDiem(@PathVariable Long maSV, @PathVariable Long maCTDT) {
         return service.bangDiem(maSV, maCTDT);
     }
 
     @GetMapping("/chuaHoanThanh/{maCTDT}")
-    public List<Map<String,Object>> chuaHoanThanh(@PathVariable int maCTDT) {
+    public List<Map<String,Object>> chuaHoanThanh(@PathVariable Long maCTDT) {
         return service.chuaHoanThanh(maCTDT);
     }
 

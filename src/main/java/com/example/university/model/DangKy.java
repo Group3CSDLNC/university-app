@@ -6,7 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class DangKy {
-    private Integer maSV;
-    private String maLHP;
-    private java.sql.Date ngayDangKy;
+    private Long maSV;
+    private Long maLHP;
+    private String ngayDangKy;
 }

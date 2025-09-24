@@ -32,23 +32,8 @@ public class LopHocPhanService {
         return repo.getLopHocPhan(hocKy, namHoc, maCTDT, maGV);
     }
 
-    public List<LopHocPhanDTO> getAvailableLopHocPhan(int maSV, String namHoc, int hocKy, Integer maCN) {
-        List<LopHocPhanDTO> list = repo.getLopHocPhanBySV(maSV, namHoc, hocKy, maCN);
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-        for (LopHocPhanDTO dto : list) {
-            if (dto.getNgayBatDau() != null && dto.getSoTinChi() != null) {
-                try {
-                    LocalDate start = LocalDate.parse(dto.getNgayBatDau(), formatter);
-                    LocalDate end = start.plusDays(dto.getSoTinChi() * 15L);
-                    dto.setNgayKetThuc(end.format(formatter));
-                } catch (Exception e) {
-                    dto.setNgayKetThuc(null);
-                }
-            }
-        }
-        return list;
+    public List<LopHocPhanDTO> getAvailableLopHocPhan(Long maSV, String namHoc, int hocKy, Long maCN) {
+        return repo.getLopHocPhanBySV(maSV, namHoc, hocKy, maCN);
     }
 
 }

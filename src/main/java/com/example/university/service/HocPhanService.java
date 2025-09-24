@@ -62,10 +62,10 @@ public class HocPhanService {
         return repo.searchByKeyword(keyword);
     }
 
-    public boolean existsByTenHPAndMaCTDT(String tenHP, int maCTDT, Integer excludeMaHP) {
+    public boolean existsByTenHPAndMaCTDT(String tenHP, Long maCTDT, Long excludeMaHP) {
         return repo.existsByTenHPAndMaCTDT(tenHP, maCTDT, excludeMaHP);
     }
-    public int countByMaCTDT(int maCTDT) {
+    public int countByMaCTDT(Long maCTDT) {
         return repo.countByMaCTDT(maCTDT);
     }
 }

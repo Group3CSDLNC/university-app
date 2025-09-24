@@ -13,12 +13,16 @@ public class BaoCaoRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public List<Map<String,Object>> getBangDiem(int maSV, int maCTDT) {
-        return jdbcTemplate.queryForList("EXEC sp_BangDiemSinhVien ?, ?", maSV, maCTDT);
+    public List<Map<String,Object>> getBangDiem(Long maSV, Long maCTDT) {
+        return jdbcTemplate.queryForList(
+                "EXEC sp_BangDiemSinhVien ?, ?", maSV, maCTDT
+        );
     }
 
-    public List<Map<String,Object>> getChuaHoanThanh(int maCTDT) {
-        return jdbcTemplate.queryForList("EXEC sp_SinhVienChuaHoanThanhKhoa ?", maCTDT);
+    public List<Map<String,Object>> getChuaHoanThanh(Long maCTDT) {
+        return jdbcTemplate.queryForList(
+                "EXEC sp_SinhVienChuaHoanThanhKhoa ?", maCTDT
+        );
     }
 
     public List<Map<String,Object>> getBaoCaoSiSo() {

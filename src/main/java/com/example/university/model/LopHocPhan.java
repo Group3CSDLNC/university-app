@@ -6,8 +6,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class LopHocPhan {
-    private String maLHP;
-    private Integer maHP;
+    private Long maLHP;
+    private Long maHP;
     private Integer hocKy;
     private String namHoc;
     private Integer siSo;

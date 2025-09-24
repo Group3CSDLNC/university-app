@@ -26,7 +26,7 @@ public class DangKyController {
 
     @PostMapping
     public ResponseEntity<?> dangKy(@RequestBody Map<String, Object> req) {
-        Integer maSV = sessionService.getCurrentUser().getMaSV();
+        Long maSV = sessionService.getCurrentUser().getMaSV();
         String maLHP = (String) req.get("maLHP");
 
         service.dangKyHoc(maSV, maLHP);
@@ -35,7 +35,7 @@ public class DangKyController {
 
     @PostMapping("/huy")
     public ResponseEntity<?> huyDangKy(@RequestBody Map<String, Object> req) {
-        Integer maSV = sessionService.getCurrentUser().getMaSV();
+        Long maSV = sessionService.getCurrentUser().getMaSV();
         String maLHP = (String) req.get("maLHP");
 
         boolean success = service.huyDangKyHoc(maSV, maLHP);

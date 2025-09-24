@@ -10,32 +10,60 @@ import java.util.List;
 
 @Repository
 public class LichHocRepository {
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    // Lấy toàn bộ lịch học
     public List<LichHoc> findAll() {
         return jdbcTemplate.query("EXEC sp_GetAllLichHoc", (rs, rowNum) -> {
             LichHoc lh = new LichHoc();
             lh.setMaLichHoc(rs.getInt("MaLichHoc"));
-            lh.setMaLHP(rs.getString("MaLHP"));
-            lh.setNgay(Date.valueOf(rs.getDate("Ngay").toLocalDate()));
-            lh.setMaPH(rs.getString("MaPH"));
+            lh.setMaLHP(rs.getLong("MaLHP"));
+            lh.setTietBatDau(rs.getInt("TietBatDau"));
+            lh.setMaPH(rs.getInt("MaPH"));
             lh.setSoTiet(rs.getInt("SoTiet"));
+            lh.setThuTrongTuan(rs.getInt("ThuTrongTuan"));
+            lh.setNgayBatDau(rs.getDate("NgayBatDau"));
+            lh.setNgayKetThuc(rs.getDate("NgayKetThuc"));
             return lh;
         });
     }
 
-    public void add(LichHoc lh) {
-        jdbcTemplate.update("EXEC sp_ThemLichHoc ?,?,?,?",
-                lh.getMaLHP(), lh.getNgay(), lh.getMaPH(), lh.getSoTiet());
+    // Thêm lịch học
+    public int add(LichHoc lh) {
+        return jdbcTemplate.update(
+                "EXEC sp_ThemLichHoc ?,?,?,?,?,?,?",
+                lh.getMaLHP(),
+                lh.getTietBatDau(),
+                lh.getMaPH(),
+                lh.getSoTiet(),
+                lh.getThuTrongTuan(),
+                lh.getNgayBatDau() != null ? new Date(lh.getNgayBatDau().getTime()) : null,
+                lh.getNgayKetThuc() != null ? new Date(lh.getNgayKetThuc().getTime()) : null
+        );
     }
 
-    public void update(LichHoc lh) {
-        jdbcTemplate.update("EXEC sp_SuaLichHoc ?,?,?,?,?",
-                lh.getMaLichHoc(), lh.getMaLHP(), lh.getNgay(), lh.getMaPH(), lh.getSoTiet());
+    // Cập nhật lịch học
+    public int update(LichHoc lh) {
+        return jdbcTemplate.update(
+                "EXEC sp_SuaLichHoc ?,?,?,?,?,?,?,?",
+                lh.getMaLichHoc(),
+                lh.getMaLHP(),
+                lh.getTietBatDau(),
+                lh.getMaPH(),
+                lh.getSoTiet(),
+                lh.getThuTrongTuan(),
+                lh.getNgayBatDau() != null ? new Date(lh.getNgayBatDau().getTime()) : null,
+                lh.getNgayKetThuc() != null ? new Date(lh.getNgayKetThuc().getTime()) : null
+        );
     }
 
-    public void delete(int maLichHoc) {
-        jdbcTemplate.update("EXEC sp_XoaLichHoc ?", maLichHoc);
+    // Xóa lịch học
+    public int delete(int maLichHoc) {
+        return jdbcTemplate.update(
+                "EXEC sp_XoaLichHoc ?",
+                maLichHoc
+        );
     }
 }

@@ -29,5 +29,6 @@ public class LopHocPhanDTO {
     private String ngayBatDau;   // yyyy-MM-dd
     private String ngayKetThuc;  // yyyy-MM-dd
     private Integer tietBatDau;
+    private Integer thu;
     private Boolean isDangKy;
 }

@@ -1,8 +1,11 @@
 CREATE OR ALTER PROCEDURE sp_ThemLichHoc
-    @MaLHP VARCHAR(10),
-    @Ngay DATE,
-    @MaPH VARCHAR(10),
-    @SoTiet INT
+    @MaLHP BIGINT,
+    @MaPH INT,
+    @TietBatDau INT,
+    @SoTiet INT,
+    @ThuTrongTuan INT,
+    @NgayBatDau DATE,
+    @NgayKetThuc DATE
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -24,42 +27,53 @@ BEGIN
     IF (@SoTiet % 2) <> 0
         THROW 73004, 'Số tiết phải là bội số của 2', 1;
 
-    -- trùng phòng (cùng ngày, cùng phòng) — không xét MaLHP (thêm mới)
+    -- trùng phòng (cùng phòng, cùng thứ, trùng tiết, giao nhau thời gian)
     IF EXISTS (
-        SELECT 1 FROM LichHoc
-        WHERE Ngay = @Ngay AND MaPH = @MaPH
+        SELECT 1
+        FROM LichHoc
+        WHERE MaPH = @MaPH
+          AND ThuTrongTuan = @ThuTrongTuan
+          AND (
+              (TietBatDau BETWEEN @TietBatDau AND (@TietBatDau + @SoTiet - 1))
+              OR (@TietBatDau BETWEEN TietBatDau AND (TietBatDau + SoTiet - 1))
+          )
+          AND (
+              @NgayBatDau <= NgayKetThuc AND @NgayKetThuc >= NgayBatDau
+          )
     )
         THROW 73005, 'Phòng học đã có lớp khác trong cùng thời điểm', 1;
 
-    -- kiểm tra giảng viên trùng lịch:
-    -- 1) lấy danh sách MaGV đang dạy @MaLHP (nếu không có GV thì skip)
-    DECLARE @HasGV INT;
-    SELECT @HasGV = COUNT(*) FROM GiangDay WHERE MaLHP = @MaLHP;
+    -- kiểm tra giảng viên trùng lịch
+    IF EXISTS (
+        SELECT 1
+        FROM GiangDay gd
+        JOIN LichHoc lh ON gd.MaLHP = lh.MaLHP
+        WHERE gd.MaGV IN (SELECT MaGV FROM GiangDay WHERE MaLHP = @MaLHP)
+          AND lh.ThuTrongTuan = @ThuTrongTuan
+          AND (
+              (lh.TietBatDau BETWEEN @TietBatDau AND (@TietBatDau + @SoTiet - 1))
+              OR (@TietBatDau BETWEEN lh.TietBatDau AND (lh.TietBatDau + lh.SoTiet - 1))
+          )
+          AND (
+              @NgayBatDau <= lh.NgayKetThuc AND @NgayKetThuc >= lh.NgayBatDau
+          )
+    )
+        THROW 73006, 'Giảng viên đã có lịch dạy trùng giờ', 1;
 
-    IF @HasGV > 0
-    BEGIN
-        IF EXISTS (
-            SELECT 1
-            FROM GiangDay gdExisting   -- GV của các lớp khác
-            JOIN LichHoc lhExisting ON gdExisting.MaLHP = lhExisting.MaLHP
-            WHERE gdExisting.MaGV IN (SELECT MaGV FROM GiangDay WHERE MaLHP = @MaLHP)
-              AND lhExisting.Ngay = @Ngay
-              AND gdExisting.MaLHP <> @MaLHP
-        )
-            THROW 73006, 'Giảng viên đã có lịch dạy trùng giờ', 1;
-    END
-
-    -- nếu ok -> insert
-    INSERT INTO LichHoc (MaLHP, Ngay, MaPH, SoTiet)
-    VALUES (@MaLHP, @Ngay, @MaPH, @SoTiet);
+    -- insert
+    INSERT INTO LichHoc (MaLHP, MaPH, TietBatDau, SoTiet, ThuTrongTuan, NgayBatDau, NgayKetThuc)
+    VALUES (@MaLHP, @MaPH, @TietBatDau, @SoTiet, @ThuTrongTuan, @NgayBatDau, @NgayKetThuc);
 END;
 
 CREATE OR ALTER PROCEDURE sp_SuaLichHoc
     @MaLichHoc INT,
-    @MaLHP VARCHAR(10),
-    @Ngay DATE,
-    @MaPH VARCHAR(10),
-    @SoTiet INT
+    @MaLHP BIGINT,
+    @MaPH INT,
+    @TietBatDau INT,
+    @SoTiet INT,
+    @ThuTrongTuan INT,
+    @NgayBatDau DATE,
+    @NgayKetThuc DATE
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -83,36 +97,53 @@ BEGIN
     IF (@SoTiet % 2) <> 0
         THROW 73004, 'Số tiết phải là bội số của 2', 1;
 
-    -- trùng phòng: loại trừ chính MaLichHoc này
+    -- trùng phòng (loại trừ chính lịch này)
     IF EXISTS (
-        SELECT 1 FROM LichHoc
-        WHERE Ngay = @Ngay AND MaPH = @MaPH AND MaLichHoc <> @MaLichHoc
+        SELECT 1
+        FROM LichHoc
+        WHERE MaPH = @MaPH
+          AND ThuTrongTuan = @ThuTrongTuan
+          AND MaLichHoc <> @MaLichHoc
+          AND (
+              (TietBatDau BETWEEN @TietBatDau AND (@TietBatDau + @SoTiet - 1))
+              OR (@TietBatDau BETWEEN TietBatDau AND (TietBatDau + SoTiet - 1))
+          )
+          AND (
+              @NgayBatDau <= NgayKetThuc AND @NgayKetThuc >= NgayBatDau
+          )
     )
         THROW 73005, 'Phòng học đã có lớp khác trong cùng thời điểm', 1;
 
-    -- kiểm tra giảng viên trùng lịch: lấy danh sách GV của @MaLHP (nếu có)
-    DECLARE @HasGV INT;
-    SELECT @HasGV = COUNT(*) FROM GiangDay WHERE MaLHP = @MaLHP;
-
-    IF @HasGV > 0
-    BEGIN
-        IF EXISTS (
-            SELECT 1
-            FROM GiangDay gdExisting
-            JOIN LichHoc lhExisting ON gdExisting.MaLHP = lhExisting.MaLHP
-            WHERE gdExisting.MaGV IN (SELECT MaGV FROM GiangDay WHERE MaLHP = @MaLHP)
-              AND lhExisting.Ngay = @Ngay
-              AND (gdExisting.MaLHP <> @MaLHP OR lhExisting.MaLichHoc <> @MaLichHoc)
-        )
-            THROW 73006, 'Giảng viên đã có lịch dạy trùng giờ', 1;
-    END
+    -- kiểm tra giảng viên trùng lịch
+    IF EXISTS (
+        SELECT 1
+        FROM GiangDay gd
+        JOIN LichHoc lh ON gd.MaLHP = lh.MaLHP
+        WHERE gd.MaGV IN (SELECT MaGV FROM GiangDay WHERE MaLHP = @MaLHP)
+          AND lh.ThuTrongTuan = @ThuTrongTuan
+          AND (
+              (lh.TietBatDau BETWEEN @TietBatDau AND (@TietBatDau + @SoTiet - 1))
+              OR (@TietBatDau BETWEEN lh.TietBatDau AND (lh.TietBatDau + lh.SoTiet - 1))
+          )
+          AND (
+              @NgayBatDau <= lh.NgayKetThuc AND @NgayKetThuc >= lh.NgayBatDau
+          )
+          AND lh.MaLichHoc <> @MaLichHoc
+    )
+        THROW 73006, 'Giảng viên đã có lịch dạy trùng giờ', 1;
 
     -- update
     UPDATE LichHoc
-    SET MaLHP = @MaLHP, Ngay = @Ngay, MaPH = @MaPH, SoTiet = @SoTiet
+    SET MaLHP = @MaLHP,
+        MaPH = @MaPH,
+        TietBatDau = @TietBatDau,
+        SoTiet = @SoTiet,
+        ThuTrongTuan = @ThuTrongTuan,
+        NgayBatDau = @NgayBatDau,
+        NgayKetThuc = @NgayKetThuc
     WHERE MaLichHoc = @MaLichHoc;
 END;
-
+GO
 
 CREATE OR ALTER PROCEDURE sp_XoaLichHoc
     @MaLichHoc INT
@@ -125,11 +156,15 @@ BEGIN
 
     DELETE FROM LichHoc WHERE MaLichHoc = @MaLichHoc;
 END;
+GO
 
 CREATE OR ALTER PROCEDURE sp_GetAllLichHoc
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT * FROM LichHoc;
+
+    SELECT MaLichHoc, MaLHP, MaPH, TietBatDau, SoTiet, ThuTrongTuan, NgayBatDau, NgayKetThuc
+    FROM LichHoc;
 END;
+GO
 

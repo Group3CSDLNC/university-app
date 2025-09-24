@@ -26,7 +26,7 @@ public class TaiKhoanRepository {
                 tk.setMaTK(rs.getInt("MaTK"));
                 tk.setTenDangNhap(rs.getString("TenDangNhap"));
                 tk.setLoaiTaiKhoan(rs.getString("LoaiTaiKhoan"));
-                tk.setMaSV(rs.getInt("MaSV"));
+                tk.setMaSV(rs.getLong("MaSV"));
                 tk.setMaNV(rs.getInt("MaNV"));
                 return tk;
             }

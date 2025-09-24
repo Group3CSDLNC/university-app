@@ -51,10 +51,10 @@ public class LopHocPhanController {
 
     @GetMapping("/available")
     public ResponseEntity<List<LopHocPhanDTO>> getAvailableLopHocPhan(
-            @RequestParam int maSV,
+            @RequestParam Long maSV,
             @RequestParam String namHoc,
             @RequestParam int hocKy,
-            @RequestParam(required = false) Integer maCN) {
+            @RequestParam(required = false) Long maCN) {
 
         List<LopHocPhanDTO> list = service.getAvailableLopHocPhan(maSV, namHoc, hocKy, maCN);
         return ResponseEntity.ok(list);

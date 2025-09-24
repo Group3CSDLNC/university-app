@@ -1,66 +1,106 @@
-USE [QuanLyTrungTamDaoTaoD];
+/* ===========================
+   PROCEDURES - ĐÃ SỬA
+   - Chuẩn hóa kiểu tham số (BIGINT/INT)
+   - Sửa logic kiểm tra xung đột (dựa trên TietBatDau & SoTiet)
+   - Tự sinh MaCTDT, MaHP khi cần theo quy tắc:
+       MaCTDT = MaCN * 100 + (right(left(NamHoc,4),2))
+       MaHP   = MaCTDT * 100 + seq (lấy max seq hiện có + 1)
+   - ROUND tính điểm và cập nhật KetQuaTongKet
+   =========================== */
+
 GO
 
--- Thêm chương trình
-CREATE PROCEDURE sp_AddChuongTrinh
+-- 1) Thêm chương trinh (tự sinh MaCTDT từ MaCN + NamHoc)
+CREATE OR ALTER PROCEDURE sp_AddChuongTrinh
     @TenCTDT NVARCHAR(150),
     @TongTinChi INT,
-    @MaCN INT,
+    @MaCN BIGINT,
     @NamHoc NVARCHAR(50)
 AS
 BEGIN
-    INSERT INTO ChuongTrinhDaoTao (TenCTDT, TongTinChi, MaCN, NamHoc)
-    VALUES (@TenCTDT, @TongTinChi, @MaCN, @NamHoc);
-END
-GO
+    SET NOCOUNT ON;
 
--- Cập nhật chương trình
-CREATE PROCEDURE sp_UpdateChuongTrinh
-    @MaCTDT INT,
-    @TenCTDT NVARCHAR(150),
-    @TongTinChi INT,
-    @MaCN INT,
-    @NamHoc NVARCHAR(50)
-AS
-BEGIN
-    UPDATE ChuongTrinhDaoTao
-    SET TenCTDT=@TenCTDT, TongTinChi=@TongTinChi, MaCN=@MaCN, NamHoc=@NamHoc
-    WHERE MaCTDT=@MaCTDT;
-END
-GO
+    -- Lấy 4 ký tự đầu (năm bắt đầu), sau đó lấy 2 số cuối
+    DECLARE @year4 NVARCHAR(4) = LEFT(ISNULL(@NamHoc,''),4);
+    DECLARE @yearSuffix INT =
+        CASE
+            WHEN TRY_CAST(RIGHT(@year4,2) AS INT) IS NOT NULL THEN TRY_CAST(RIGHT(@year4,2) AS INT)
+            ELSE DATEPART(YEAR, GETDATE()) % 100
+        END;
 
--- Xóa chương trình (kiểm tra ràng buộc)
-CREATE PROCEDURE sp_DeleteChuongTrinh
-    @MaCTDT INT
-AS
-BEGIN
-    IF EXISTS (SELECT 1 FROM HocPhan WHERE MaCTDT=@MaCTDT)
-       OR EXISTS (SELECT 1 FROM LopHocPhan LHP
-                  JOIN HocPhan HP ON LHP.MaHP=HP.MaHP
-                  WHERE HP.MaCTDT=@MaCTDT)
+    DECLARE @MaCTDT BIGINT = @MaCN * 100 + @yearSuffix;
+
+    -- Kiểm tra tồn tại
+    IF EXISTS(SELECT 1 FROM ChuongTrinhDaoTao WHERE MaCTDT = @MaCTDT)
     BEGIN
-        RAISERROR('Khong the xoa CTDT vi ton tai hoc phan hoac lop hoc phan lien quan.',16,1)
-        RETURN
+        RAISERROR('CTDT da ton tai cho chuyen nganh va nam hoc.',16,1);
+        RETURN;
     END
 
-    DELETE FROM ChuongTrinhDaoTao WHERE MaCTDT=@MaCTDT;
-END
+    INSERT INTO ChuongTrinhDaoTao (MaCTDT, TenCTDT, TongTinChi, MaCN, NamHoc)
+    VALUES (@MaCTDT, @TenCTDT, @TongTinChi, @MaCN, @NamHoc);
+END;
 GO
 
--- Gán nhân viên quản lý chương trình
-CREATE PROCEDURE sp_AssignNVQuanLyCTDT
-    @MaCTDT INT,
+-- 2) Cập nhật chương trình (MaCTDT là BIGINT)
+CREATE OR ALTER PROCEDURE sp_UpdateChuongTrinh
+    @MaCTDT BIGINT,
+    @TenCTDT NVARCHAR(150),
+    @TongTinChi INT,
+    @MaCN BIGINT,
+    @NamHoc NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE ChuongTrinhDaoTao
+    SET TenCTDT = @TenCTDT,
+        TongTinChi = @TongTinChi,
+        MaCN = @MaCN,
+        NamHoc = @NamHoc
+    WHERE MaCTDT = @MaCTDT;
+END;
+GO
+
+-- 3) Xóa chương trình (kiểm tra ràng buộc)
+CREATE OR ALTER PROCEDURE sp_DeleteChuongTrinh
+    @MaCTDT BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM HocPhan WHERE MaCTDT = @MaCTDT)
+       OR EXISTS (
+           SELECT 1
+           FROM LopHocPhan LHP
+           JOIN HocPhan HP ON LHP.MaHP = HP.MaHP
+           WHERE HP.MaCTDT = @MaCTDT
+       )
+    BEGIN
+        RAISERROR('Khong the xoa CTDT vi ton tai hoc phan hoac lop hoc phan lien quan.',16,1);
+        RETURN;
+    END
+
+    DELETE FROM ChuongTrinhDaoTao WHERE MaCTDT = @MaCTDT;
+END;
+GO
+
+-- 4) Gán nhân viên quản lý CTDT (MaCTDT BIGINT)
+CREATE OR ALTER PROCEDURE sp_AssignNVQuanLyCTDT
+    @MaCTDT BIGINT,
     @MaNV INT
 AS
 BEGIN
-    IF EXISTS (SELECT 1 FROM CTDT_NhanVien WHERE MaCTDT=@MaCTDT)
-        UPDATE CTDT_NhanVien SET MaNV=@MaNV WHERE MaCTDT=@MaCTDT
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM CTDT_NhanVien WHERE MaCTDT = @MaCTDT)
+        UPDATE CTDT_NhanVien SET MaNV = @MaNV WHERE MaCTDT = @MaCTDT;
     ELSE
-        INSERT INTO CTDT_NhanVien(MaCTDT, MaNV) VALUES(@MaCTDT,@MaNV)
-END
+        INSERT INTO CTDT_NhanVien (MaCTDT, MaNV) VALUES (@MaCTDT, @MaNV);
+END;
 GO
 
--- Danh sách + filter
+-- 5) Danh sach + filter CTDT
 CREATE OR ALTER PROCEDURE sp_ListCTDT
     @MaKhoa INT = NULL,
     @NamHoc NVARCHAR(50) = NULL,
@@ -80,11 +120,11 @@ BEGIN
         ctdt.NamHoc,
         nv.MaNV AS NguoiQuanLy,
         nv.HoTen AS TenNguoiQuanLy
-    FROM chuongtrinhdaotao ctdt
+    FROM ChuongTrinhDaoTao ctdt
     INNER JOIN ChuyenNganh cn ON ctdt.MaCN = cn.MaCN
-    INNER JOIN khoa k ON cn.MaKhoa = k.MaKhoa
+    INNER JOIN Khoa k ON cn.MaKhoa = k.MaKhoa
     LEFT JOIN CTDT_NhanVien ctdt_nv ON ctdt.MaCTDT = ctdt_nv.MaCTDT
-    LEFT JOIN nhanvien nv ON ctdt_nv.MaNV = nv.MaNV
+    LEFT JOIN NhanVien nv ON ctdt_nv.MaNV = nv.MaNV
     WHERE
         (@MaKhoa IS NULL OR k.MaKhoa = @MaKhoa)
         AND (@NamHoc IS NULL OR ctdt.NamHoc = @NamHoc)
@@ -93,264 +133,294 @@ BEGIN
 END;
 GO
 
--- Search CTDT theo keyword (tên hoặc năm học)
-
+-- 6) Search CTDT theo keyword
 CREATE OR ALTER PROCEDURE sp_SearchCTDT
     @Keyword NVARCHAR(255)
 AS
 BEGIN
     SET NOCOUNT ON;
+
     SELECT MaCTDT, TenCTDT, TongTinChi, MaCN, NamHoc
     FROM ChuongTrinhDaoTao ctdt
     WHERE TenCTDT LIKE N'%' + @Keyword + '%'
        OR NamHoc LIKE N'%' + @Keyword + '%'
     ORDER BY ctdt.MaCTDT DESC;
-
-END
+END;
 GO
 
--- Thêm học phần
-CREATE PROCEDURE sp_AddHocPhan
+-- 7) Thêm học phần (MaCTDT BIGINT, TienQuyet có thể là MaHP => BIGINT)
+CREATE OR ALTER PROCEDURE sp_AddHocPhan
     @TenHP NVARCHAR(150),
     @SoTinChi INT,
     @TietLT INT,
     @TietTH INT,
-    @MaCTDT INT,
-    @TienQuyet INT
-AS
-BEGIN
-    -- Kiểm tra số lượng học phần trong CTDT <=10
-    DECLARE @countHP INT
-    SELECT @countHP=COUNT(*) FROM HocPhan WHERE MaCTDT=@MaCTDT
-    IF @countHP >= 10
-    BEGIN
-        RAISERROR('CTDT da co 10 hoc phan. Khong the them.',16,1)
-        RETURN
-    END
-
-    -- Kiểm tra tên học phần trùng trong cùng CTDT
-    IF EXISTS (SELECT 1 FROM HocPhan WHERE MaCTDT=@MaCTDT AND TenHP=@TenHP)
-    BEGIN
-        RAISERROR('Ten hoc phan da ton tai trong CTDT.',16,1)
-        RETURN
-    END
-
-    INSERT INTO HocPhan (TenHP, SoTinChi, TietLT, TietTH, MaCTDT, TienQuyet)
-    VALUES (@TenHP,@SoTinChi,@TietLT,@TietTH,@MaCTDT,@TienQuyet)
-END
-GO
-
--- ===============================
--- Xóa học phần
--- ===============================
-CREATE PROCEDURE sp_DeleteHocPhan
-    @MaHP INT
-AS
-BEGIN
-    DELETE FROM HocPhan
-    WHERE MaHP = @MaHP;
-END
-GO
-
--- ===============================
--- Lấy học phần theo ID
--- ===============================
-CREATE PROCEDURE sp_GetHocPhanById
-    @MaHP INT
-AS
-BEGIN
-    SELECT MaHP, TenHP, SoTinChi, TietTH, TietLT, MaCTDT, TienQuyet
-    FROM HocPhan
-    WHERE MaHP = @MaHP;
-END
-GO
-
--- ===============================
--- Lấy danh sách học phần
--- ===============================
-CREATE PROCEDURE sp_GetAllHocPhan
-AS
-BEGIN
-    SELECT MaHP, TenHP, SoTinChi, TietTH, TietLT, MaCTDT, TienQuyet
-    FROM HocPhan;
-END
-GO
-
--- ===============================
--- Tìm kiếm học phần theo keyword
--- ===============================
-CREATE PROCEDURE sp_SearchHocPhanByKeyword
-    @Keyword NVARCHAR(150)
-AS
-BEGIN
-    SELECT MaHP, TenHP, SoTinChi, TietTH, TietLT, MaCTDT, TienQuyet
-    FROM HocPhan
-    WHERE TenHP LIKE '%' + @Keyword + '%';
-END
-GO
--- =======================
--- XÓA HỌC PHẦN AN TOÀN
--- =======================
-CREATE PROCEDURE HocPhan_Delete
-    @MaHP INT
+    @MaCTDT BIGINT,
+    @TienQuyet BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Kiểm tra FK
-    IF EXISTS (SELECT 1 FROM LopHocPhan WHERE MaHP = @MaHP)
+    DECLARE @countHP INT = (SELECT COUNT(*) FROM HocPhan WHERE MaCTDT = @MaCTDT);
+    IF @countHP >= 10
     BEGIN
-        -- Không xóa, trả thông báo lỗi
-        RAISERROR('Không thể xóa: học phần đang có lớp học phần tham chiếu!', 16, 1);
+        RAISERROR('CTDT da co 10 hoc phan. Khong the them.',16,1);
         RETURN;
     END
 
-    -- Xóa học phần
-    DELETE FROM hocphan WHERE MaHP = @MaHP;
+    IF EXISTS (SELECT 1 FROM HocPhan WHERE MaCTDT = @MaCTDT AND TenHP = @TenHP)
+    BEGIN
+        RAISERROR('Ten hoc phan da ton tai trong CTDT.',16,1);
+        RETURN;
+    END
+
+    -- Sinh MaHP theo quy tac: MaHP = MaCTDT * 100 + seq (seq = max(seq) + 1)
+    DECLARE @maxHP BIGINT;
+    SELECT @maxHP = MAX(MaHP) FROM HocPhan WHERE MaCTDT = @MaCTDT;
+
+    DECLARE @seq INT = CASE WHEN @maxHP IS NULL THEN 1 ELSE CONVERT(INT, @maxHP % 100) + 1 END;
+    IF @seq > 99
+    BEGIN
+        RAISERROR('Da vuot so luong hoc phan (seq > 99) trong CTDT.',16,1);
+        RETURN;
+    END
+
+    DECLARE @MaHP BIGINT = @MaCTDT * 100 + @seq;
+
+    INSERT INTO HocPhan (MaHP, TenHP, SoTinChi, TietLT, TietTH, MaCTDT, TienQuyet)
+    VALUES (@MaHP, @TenHP, @SoTinChi, @TietLT, @TietTH, @MaCTDT, @TienQuyet);
 END;
 GO
 
--- Cập nhật học phần (cùng ràng buộc)
-CREATE PROCEDURE sp_UpdateHocPhan
-    @MaHP INT,
+-- 8) Xóa học phần theo MaHP (BIGINT)
+CREATE OR ALTER PROCEDURE sp_DeleteHocPhan
+    @MaHP BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM LopHocPhan WHERE MaHP = @MaHP)
+    BEGIN
+        RAISERROR('Khong the xoa: hoc phan dang co lop hoc phan tham chieu!', 16, 1);
+        RETURN;
+    END
+
+    DELETE FROM HocPhan WHERE MaHP = @MaHP;
+END;
+GO
+
+-- 9) Lấy học phần theo ID
+CREATE OR ALTER PROCEDURE sp_GetHocPhanById
+    @MaHP BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT MaHP, TenHP, SoTinChi, TietTH, TietLT, MaCTDT, TienQuyet
+    FROM HocPhan
+    WHERE MaHP = @MaHP;
+END;
+GO
+
+-- 10) Lấy danh sách học phần
+CREATE OR ALTER PROCEDURE sp_GetAllHocPhan
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT MaHP, TenHP, SoTinChi, TietTH, TietLT, MaCTDT, TienQuyet
+    FROM HocPhan;
+END;
+GO
+
+-- 11) Tìm kiếm học phần theo keyword
+CREATE OR ALTER PROCEDURE sp_SearchHocPhanByKeyword
+    @Keyword NVARCHAR(150)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT MaHP, TenHP, SoTinChi, TietTH, TietLT, MaCTDT, TienQuyet
+    FROM HocPhan
+    WHERE TenHP LIKE '%' + @Keyword + '%';
+END;
+GO
+
+-- 12) Cập nhật học phần (cùng ràng buộc)
+CREATE OR ALTER PROCEDURE sp_UpdateHocPhan
+    @MaHP BIGINT,
     @TenHP NVARCHAR(150),
     @SoTinChi INT,
     @TietLT INT,
     @TietTH INT,
-    @MaCTDT INT,
-    @TienQuyet INT
+    @MaCTDT BIGINT,
+    @TienQuyet BIGINT = NULL
 AS
 BEGIN
-    IF EXISTS (SELECT 1 FROM HocPhan WHERE MaCTDT=@MaCTDT AND TenHP=@TenHP AND MaHP<>@MaHP)
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM HocPhan WHERE MaCTDT = @MaCTDT AND TenHP = @TenHP AND MaHP <> @MaHP)
     BEGIN
-        RAISERROR('Ten hoc phan da ton tai trong CTDT.',16,1)
-        RETURN
+        RAISERROR('Ten hoc phan da ton tai trong CTDT.',16,1);
+        RETURN;
     END
 
     UPDATE HocPhan
-    SET TenHP=@TenHP, SoTinChi=@SoTinChi, TietLT=@TietLT, TietTH=@TietTH,
-        MaCTDT=@MaCTDT, TienQuyet=@TienQuyet
-    WHERE MaHP=@MaHP
-END
+    SET TenHP = @TenHP,
+        SoTinChi = @SoTinChi,
+        TietLT = @TietLT,
+        TietTH = @TietTH,
+        MaCTDT = @MaCTDT,
+        TienQuyet = @TienQuyet
+    WHERE MaHP = @MaHP;
+END;
 GO
 
-CREATE PROCEDURE sp_AssignGiangDay
+-- 13) Phân công giảng dạy (Kiểm tra xung đột tiết dựa trên LichHoc.TietBatDau & SoTiet)
+CREATE OR ALTER PROCEDURE sp_AssignGiangDay
     @MaGV INT,
-    @MaLHP VARCHAR(10),
+    @MaLHP BIGINT,
     @SoTietPhanCong INT
 AS
 BEGIN
-    -- Kiểm tra xung đột: giảng viên không dạy 2 lớp cùng tiết
+    SET NOCOUNT ON;
+
+    -- Kiểm tra tồn tại LHP
+    IF NOT EXISTS (SELECT 1 FROM LopHocPhan WHERE MaLHP = @MaLHP)
+    BEGIN
+        RAISERROR('Lop hoc phan khong ton tai.',16,1);
+        RETURN;
+    END
+
+    -- Kiểm tra xung đột: giang vien da co lop o tiet trung gian
     IF EXISTS (
         SELECT 1
         FROM GiangDay GD
-        JOIN LopHocPhan LHP1 ON GD.MaLHP=LHP1.MaLHP
-        JOIN LichHoc LH ON LH.MaLHP=LHP1.MaLHP
-        JOIN LopHocPhan LHP2 ON LHP2.MaLHP=@MaLHP
-        JOIN LichHoc LH2 ON LH2.MaLHP=LHP2.MaLHP
-        WHERE GD.MaGV=@MaGV AND LH.Ngay=LH2.Ngay AND LH.MaPH=LH2.MaPH
+        JOIN LichHoc LH1 ON GD.MaLHP = LH1.MaLHP
+        JOIN LichHoc LH2 ON LH2.MaLHP = @MaLHP
+        WHERE GD.MaGV = @MaGV
+          AND (
+              (LH1.TietBatDau <= LH2.TietBatDau + LH2.SoTiet - 1)
+              AND (LH1.TietBatDau + LH1.SoTiet - 1 >= LH2.TietBatDau)
+          )
     )
     BEGIN
-        RAISERROR('Giao vien da duoc phan cong o cung tiet.',16,1)
-        RETURN
+        RAISERROR('Giao vien da duoc phan cong o cung tiet.',16,1);
+        RETURN;
     END
 
-    IF EXISTS (SELECT 1 FROM GiangDay WHERE MaGV=@MaGV AND MaLHP=@MaLHP)
-        UPDATE GiangDay SET SoTietPhanCong=@SoTietPhanCong WHERE MaGV=@MaGV AND MaLHP=@MaLHP
+    IF EXISTS (SELECT 1 FROM GiangDay WHERE MaGV = @MaGV AND MaLHP = @MaLHP)
+        UPDATE GiangDay SET SoTietPhanCong = @SoTietPhanCong WHERE MaGV = @MaGV AND MaLHP = @MaLHP;
     ELSE
-        INSERT INTO GiangDay(MaGV, MaLHP, SoTietPhanCong) VALUES(@MaGV,@MaLHP,@SoTietPhanCong)
-END
+        INSERT INTO GiangDay (MaGV, MaLHP, SoTietPhanCong) VALUES (@MaGV, @MaLHP, @SoTietPhanCong);
+END;
 GO
 
-
-CREATE PROCEDURE sp_AddLichThi
-    @MaLHP VARCHAR(10),
+-- 14) Thêm lịch thi (MaLHP BIGINT, MaPH INT)
+CREATE OR ALTER PROCEDURE sp_AddLichThi
+    @MaLHP BIGINT,
     @NgayThi DATE,
     @GioThi TIME,
-    @MaPH VARCHAR(10)
+    @MaPH INT
 AS
 BEGIN
-    -- Kiểm tra xung đột phòng
-    IF EXISTS (SELECT 1 FROM LichThi WHERE MaPH=@MaPH AND NgayThi=@NgayThi AND GioThi=@GioThi)
+    SET NOCOUNT ON;
+
+    -- Kiem tra phong da co lich thi tai thoi diem nay
+    IF EXISTS (SELECT 1 FROM LichThi WHERE MaPH = @MaPH AND NgayThi = @NgayThi AND GioThi = @GioThi)
     BEGIN
-        RAISERROR('Phong da co lich thi tai thoi diem nay.',16,1)
-        RETURN
+        RAISERROR('Phong da co lich thi tai thoi diem nay.',16,1);
+        RETURN;
     END
 
-    -- Kiểm tra xung đột giang vien
+    -- Kiem tra xung dot giang vien (nhung giang vien day lop @MaLHP)
     IF EXISTS (
         SELECT 1
         FROM GiangDay GD
-        JOIN LichThi LT ON GD.MaLHP=LT.MaLHP
-        WHERE GD.MaGV IN (SELECT MaGV FROM GiangDay WHERE MaLHP=@MaLHP)
-          AND LT.NgayThi=@NgayThi AND LT.GioThi=@GioThi
+        JOIN LichThi LT ON GD.MaLHP = LT.MaLHP
+        WHERE GD.MaGV IN (SELECT MaGV FROM GiangDay WHERE MaLHP = @MaLHP)
+          AND LT.NgayThi = @NgayThi
+          AND LT.GioThi = @GioThi
     )
     BEGIN
-        RAISERROR('Giao vien bi xung dot lich thi.',16,1)
-        RETURN
+        RAISERROR('Giao vien bi xung dot lich thi.',16,1);
+        RETURN;
     END
 
-    INSERT INTO LichThi(MaLHP, NgayThi, GioThi, MaPH) VALUES(@MaLHP,@NgayThi,@GioThi,@MaPH)
-END
+    INSERT INTO LichThi (MaLHP, NgayThi, GioThi, MaPH) VALUES (@MaLHP, @NgayThi, @GioThi, @MaPH);
+END;
 GO
 
--- Nhập điểm lần thi
-CREATE PROCEDURE sp_AddChiTietDiem
-    @MaSV INT,
-    @MaHP INT,
+-- 15) Nhập điểm lần thi (MaSV & MaHP là BIGINT)
+CREATE OR ALTER PROCEDURE sp_AddChiTietDiem
+    @MaSV BIGINT,
+    @MaHP BIGINT,
     @LanThi INT,
     @DiemCC DECIMAL(3,1),
     @DiemGK DECIMAL(3,1),
     @DiemCK DECIMAL(3,1)
 AS
 BEGIN
-    INSERT INTO ChiTietDiem(MaSV, MaHP, LanThi, DiemCC, DiemGK, DiemCK)
-    VALUES(@MaSV,@MaHP,@LanThi,@DiemCC,@DiemGK,@DiemCK);
+    SET NOCOUNT ON;
 
-    -- Cập nhật tong ket
-    DECLARE @TongKet DECIMAL(3,1)
-    SELECT @TongKet=ROUND(@DiemCC*0.1 + @DiemGK*0.3 + @DiemCK*0.6,1)
+    INSERT INTO ChiTietDiem (MaSV, MaHP, LanThi, DiemCC, DiemGK, DiemCK)
+    VALUES (@MaSV, @MaHP, @LanThi, @DiemCC, @DiemGK, @DiemCK);
 
-    IF EXISTS (SELECT 1 FROM KetQuaTongKet WHERE MaSV=@MaSV AND MaHP=@MaHP)
-        UPDATE KetQuaTongKet SET TongKet=@TongKet,
-            XepLoai=CASE WHEN @TongKet>=8 THEN 'Gioi'
-                          WHEN @TongKet>=6.5 THEN 'Kha'
-                          WHEN @TongKet>=5 THEN 'Trung binh'
-                          ELSE 'Yeu' END
-        WHERE MaSV=@MaSV AND MaHP=@MaHP
+    -- Cap nhat ket qua tong ket theo cong thuc va xep loai
+    DECLARE @TongKet DECIMAL(3,1) = ROUND(@DiemCC * 0.1 + @DiemGK * 0.3 + @DiemCK * 0.6, 1);
+
+    IF EXISTS (SELECT 1 FROM KetQuaTongKet WHERE MaSV = @MaSV AND MaHP = @MaHP)
+    BEGIN
+        UPDATE KetQuaTongKet
+        SET TongKet = @TongKet,
+            XepLoai = CASE
+                        WHEN @TongKet >= 8 THEN N'Gioi'
+                        WHEN @TongKet >= 6.5 THEN N'Kha'
+                        WHEN @TongKet >= 5 THEN N'Trung binh'
+                        ELSE N'Yeu'
+                      END
+        WHERE MaSV = @MaSV AND MaHP = @MaHP;
+    END
     ELSE
-        INSERT INTO KetQuaTongKet(MaSV, MaHP, TongKet, XepLoai)
-        VALUES(@MaSV,@MaHP,@TongKet,
-               CASE WHEN @TongKet>=8 THEN 'Gioi'
-                    WHEN @TongKet>=6.5 THEN 'Kha'
-                    WHEN @TongKet>=5 THEN 'Trung binh'
-                    ELSE 'Yeu' END)
-END
+    BEGIN
+        INSERT INTO KetQuaTongKet (MaSV, MaHP, TongKet, XepLoai)
+        VALUES (@MaSV, @MaHP, @TongKet,
+               CASE
+                 WHEN @TongKet >= 8 THEN N'Gioi'
+                 WHEN @TongKet >= 6.5 THEN N'Kha'
+                 WHEN @TongKet >= 5 THEN N'Trung binh'
+                 ELSE N'Yeu'
+               END);
+    END
+END;
 GO
 
-CREATE PROCEDURE sp_BaoCaoMonChuaDat
-    @MaSV INT
-AS
-BEGIN
-    SELECT HP.TenHP, KD.TongKet, KD.XepLoai, CD.LanThi
-    FROM KetQuaTongKet KD
-    JOIN ChiTietDiem CD ON KD.MaSV=CD.MaSV AND KD.MaHP=CD.MaHP
-    JOIN HocPhan HP ON KD.MaHP=HP.MaHP
-    WHERE KD.MaSV=@MaSV AND KD.TongKet<5
-    ORDER BY HP.TenHP, CD.LanThi DESC
-END
-GO
-
-
-CREATE PROCEDURE [sp_GetAllTaiKhoan]
+-- 16) Bao cao mon chua dat (MaSV BIGINT)
+CREATE OR ALTER PROCEDURE sp_BaoCaoMonChuaDat
+    @MaSV BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
-    SELECT *
-    FROM taikhoan
-END
 
-CREATE PROCEDURE sp_CheckLogin
+    SELECT HP.TenHP, KD.TongKet, KD.XepLoai, CD.LanThi
+    FROM KetQuaTongKet KD
+    JOIN ChiTietDiem CD ON KD.MaSV = CD.MaSV AND KD.MaHP = CD.MaHP
+    JOIN HocPhan HP ON KD.MaHP = HP.MaHP
+    WHERE KD.MaSV = @MaSV AND KD.TongKet < 5
+    ORDER BY HP.TenHP, CD.LanThi DESC;
+END;
+GO
+
+-- 17) Lấy tất cả tài khoản
+CREATE OR ALTER PROCEDURE sp_GetAllTaiKhoan
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SELECT * FROM TaiKhoan;
+END;
+GO
+
+-- 18) Check login
+CREATE OR ALTER PROCEDURE sp_CheckLogin
     @TenDangNhap NVARCHAR(50),
     @MatKhau NVARCHAR(50)
 AS
@@ -363,57 +433,59 @@ BEGIN
 END;
 GO
 
--- Thêm Khoa
+-- 19) Thêm Khoa
 CREATE OR ALTER PROCEDURE sp_AddKhoa
     @TenKhoa NVARCHAR(100),
     @Email NVARCHAR(255)
 AS
 BEGIN
-    INSERT INTO Khoa (TenKhoa, Email)
-    VALUES (@TenKhoa, @Email);
-END
+    SET NOCOUNT ON;
+    INSERT INTO Khoa (TenKhoa, Email) VALUES (@TenKhoa, @Email);
+END;
 GO
 
--- Sửa Khoa
+-- 20) Sửa Khoa
 CREATE OR ALTER PROCEDURE sp_UpdateKhoa
     @MaKhoa INT,
     @TenKhoa NVARCHAR(100),
     @Email NVARCHAR(255)
 AS
 BEGIN
-    UPDATE Khoa
-    SET TenKhoa = @TenKhoa,
-        Email = @Email
-    WHERE MaKhoa = @MaKhoa;
-END
+    SET NOCOUNT ON;
+    UPDATE Khoa SET TenKhoa = @TenKhoa, Email = @Email WHERE MaKhoa = @MaKhoa;
+END;
 GO
 
--- Xóa Khoa
+-- 21) Xóa Khoa
 CREATE OR ALTER PROCEDURE sp_DeleteKhoa
     @MaKhoa INT
 AS
 BEGIN
+    SET NOCOUNT ON;
     DELETE FROM Khoa WHERE MaKhoa = @MaKhoa;
-END
+END;
 GO
 
--- Lấy tất cả
+-- 22) Lấy tất cả Khoa
 CREATE OR ALTER PROCEDURE sp_GetAllKhoa
 AS
 BEGIN
+    SET NOCOUNT ON;
     SELECT * FROM Khoa;
-END
+END;
 GO
 
--- Lấy theo ID
+-- 23) Lấy Khoa theo ID
 CREATE OR ALTER PROCEDURE sp_GetKhoaById
     @MaKhoa INT
 AS
 BEGIN
+    SET NOCOUNT ON;
     SELECT * FROM Khoa WHERE MaKhoa = @MaKhoa;
-END
+END;
 GO
 
+-- 24) Search Khoa
 CREATE OR ALTER PROCEDURE sp_SearchKhoa
     @keyword NVARCHAR(255)
 AS
@@ -424,14 +496,13 @@ BEGIN
     FROM Khoa
     WHERE (@keyword IS NULL OR @keyword = '')
        OR (TenKhoa LIKE '%' + @keyword + '%' OR Email LIKE '%' + @keyword + '%')
-    ORDER BY MaKhoa; -- sắp xếp theo ID tăng dần
+    ORDER BY MaKhoa;
 END;
 GO
 
-
-
+-- 25) Lấy người quản lý CTDT (MaCTDT BIGINT)
 CREATE OR ALTER PROCEDURE sp_GetQuanLyCTDT
-    @MaCTDT INT
+    @MaCTDT BIGINT
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -445,8 +516,8 @@ BEGIN
         nv.VaiTro,
         nv.Email
     FROM CTDT_NhanVien ctdt_nv
-    INNER JOIN nhanvien nv ON ctdt_nv.MaNV = nv.MaNV
-    INNER JOIN chuongtrinhdaotao ctdt ON ctdt_nv.MaCTDT = ctdt.MaCTDT
+    INNER JOIN NhanVien nv ON ctdt_nv.MaNV = nv.MaNV
+    INNER JOIN ChuongTrinhDaoTao ctdt ON ctdt_nv.MaCTDT = ctdt.MaCTDT
     WHERE ctdt.MaCTDT = @MaCTDT;
 END;
 GO

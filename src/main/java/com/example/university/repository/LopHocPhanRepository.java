@@ -32,9 +32,10 @@ public class LopHocPhanRepository {
         String sql = "EXEC sp_GetLopHocPhan @HocKy=?, @NamHoc=?, @MaCTDT=?, @MaGV=?";
         return jdbcTemplate.queryForList(sql, hocKy, namHoc, maCTDT, maGV);
     }
-    public List<LopHocPhanDTO> getLopHocPhanBySV(int maSV, String namHoc, int hocKy, Integer maCN) {
+    public List<LopHocPhanDTO> getLopHocPhanBySV(Long maSV, String namHoc, int hocKy, Long maCN) {
+        String sql = "EXEC sp_GetLopHocPhanBySV @MaSV=?, @NamHoc=?, @HocKy=?, @MaCN=?";
         return jdbcTemplate.query(
-                "EXEC sp_GetLopHocPhanBySV @MaSV=?, @NamHoc=?, @HocKy=?, @MaCN=?",
+                sql,
                 new Object[]{maSV, namHoc, hocKy, maCN},
                 (rs, rowNum) -> {
                     LopHocPhanDTO dto = new LopHocPhanDTO();
@@ -50,8 +51,10 @@ public class LopHocPhanRepository {
                     dto.setNamHoc(rs.getString("NamHoc"));
                     dto.setHocKy(rs.getInt("HocKy"));
                     dto.setPhongHoc(rs.getString("PhongHoc"));
-                    dto.setNgayBatDau(rs.getString("NgayBatDau"));
                     dto.setTietBatDau(rs.getInt("TietBatDau"));
+                    dto.setThu(rs.getInt("ThuTrongTuan"));   // thêm map cột mới
+                    dto.setNgayBatDau(rs.getString("NgayBatDau"));
+                    dto.setNgayKetThuc(rs.getString("NgayKetThuc"));
                     dto.setGiangVienChinh(rs.getString("GiangVienChinh"));
                     dto.setTroGiang(rs.getString("TroGiang"));
                     dto.setTenChuyenNganh(rs.getString("TenChuyenNganh"));
