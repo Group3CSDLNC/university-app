@@ -20,8 +20,8 @@ BEGIN
         JOIN LopHocPhan lhp ON gd.MaLHP = lhp.MaLHP
         JOIN LichHoc lh ON lh.MaLHP = lhp.MaLHP
         WHERE gd.MaGV = @MaNV
-          AND MONTH(lh.Ngay) = @Thang
-          AND YEAR(lh.Ngay) = @Nam;
+          AND MONTH(lh.NgayBatDau) = @Thang
+          AND YEAR(lh.NgayBatDau) = @Nam;
 
         -- kiểm tra có là trợ giảng không
         IF EXISTS (SELECT 1 FROM GiangVien_TroGiang WHERE MaGV_TroGiang = @MaNV)

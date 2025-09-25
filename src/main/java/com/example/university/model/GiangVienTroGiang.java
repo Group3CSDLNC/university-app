@@ -9,5 +9,5 @@ public class GiangVienTroGiang {
     private Integer id;
     private Integer maGVChinh;
     private Integer maGVTroGiang;
-    private Integer maHP;
+    private Long maHP;
 }

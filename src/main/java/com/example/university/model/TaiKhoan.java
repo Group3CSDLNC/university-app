@@ -10,6 +10,6 @@ public class TaiKhoan {
     private String tenDangNhap;
     private String matKhau;
     private String loaiTaiKhoan;
-    private Integer maSV;
+    private Long maSV;
     private Integer maNV;
 }

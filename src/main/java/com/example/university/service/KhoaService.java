@@ -31,4 +31,8 @@ public class KhoaService {
     public Khoa getById(int maKhoa) {
         return repo.getById(maKhoa);
     }
+
+    public List<Khoa> searchKhoa(String keyword) {
+        return repo.searchKhoa(keyword);
+    }
 }

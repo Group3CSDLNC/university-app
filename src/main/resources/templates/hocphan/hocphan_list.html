@@ -16,7 +16,7 @@
 <!-- Navigation Bar -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
     <a class="navbar-brand" href="#">Hệ thống quản lý trung tâm đào tạo</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+    <button class="navbar-toggler" type="button" onclick="document.getElementById('navbarNav').classList.toggle('show')">
         <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
@@ -38,8 +38,8 @@
             <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'GiangVien'}" class="nav-item">
                 <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
             </li>
-            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'SinhVien'}" class="nav-item">
-                <a class="nav-link" href="/khoa/list">Khoa</a>
+            <li th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/phong-hoc/list">Phòng học</a>
             </li>
             <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'GiangVien' or sessionService.currentUser.loaiTaiKhoan == 'SinhVien')}" class="nav-item">
                 <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
@@ -50,7 +50,7 @@
         </ul>
         <ul class="navbar-nav">
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" onclick="document.querySelector('.dropdown-menu').classList.toggle('show')">
                     <span id="userName" th:text="${sessionService.currentUser != null ? sessionService.currentUser.tenDangNhap : ''}"></span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-right">
@@ -67,17 +67,16 @@
     <h2>Danh sách Học phần</h2>
 
     <!-- Search + Add -->
-    <form id="searchForm" class="d-flex w-100">
-        <input type="text" id="keyword" placeholder="Tìm theo tên học phần"
-               class="form-control search-input" th:value="${keyword}">
-        <button type="button" class="btn btn-outline-secondary" onclick="searchHP()">Tìm</button>
-        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#hocPhanModal">Thêm Học phần</button>
-    </form>
+    <div class="search-add-group mb-3">
+        <input type="text" id="keyword" class="form-control search-input" placeholder="Tìm kiếm theo tên học phần">
+        <button class="btn btn-outline-secondary" onclick="searchHP()">Tìm</button>
+        <button class="btn btn-success" data-toggle="modal" data-target="#hocphanModal" onclick="openAddModal()">Thêm Học phần</button>
+    </div>
 
     <div id="loading" class="loading">Đang tải...</div>
 
     <!-- Table -->
-    <table class="table table-striped">
+    <table class="table table-striped" id="hocphanTable">
         <thead>
         <tr>
             <th>Mã HP</th>
@@ -90,7 +89,7 @@
             <th>Hành động</th>
         </tr>
         </thead>
-        <tbody>
+        <tbody id="hocphanTableBody">
         <tr th:each="hp : ${hocphans}">
             <td th:text="${hp.maHP}"></td>
             <td th:text="${hp.tenHP}"></td>
@@ -110,28 +109,28 @@
     </table>
 </div>
 
-<!-- Form modal thêm/sửa -->
-<div class="modal" tabindex="-1" role="dialog" id="hocphanModal">
+<!-- Modal Add/Edit -->
+<div class="modal fade" id="hocphanModal" tabindex="-1" role="dialog">
     <div class="modal-dialog" role="document">
         <div class="modal-content p-3">
             <h5 class="modal-title mb-3">Học phần</h5>
             <form id="hocphanForm">
-                <input type="hidden" name="maHP" id="maHP">
+                <input type="hidden" id="maHP">
                 <div class="form-group">
                     <label>Tên học phần</label>
-                    <input type="text" name="tenHP" id="tenHP" class="form-control" required>
+                    <input type="text" id="tenHP" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label>Số tín chỉ</label>
-                    <input type="number" name="soTinChi" id="soTinChi" class="form-control" required>
+                    <input type="number" id="soTinChi" class="form-control" required>
                 </div>
                 <div class="form-group">
                     <label>Số tiết thực hành</label>
-                    <input type="number" name="tietTH" id="tietTH" class="form-control">
+                    <input type="number" id="tietTH" class="form-control">
                 </div>
                 <div class="form-group">
                     <label>Số tiết lý thuyết</label>
-                    <input type="number" name="tietLT" id="tietLT" class="form-control">
+                    <input type="number" id="tietLT" class="form-control">
                 </div>
                 <div class="form-group">
                     <label>Chương trình đào tạo</label>
@@ -154,106 +153,104 @@
                     </select>
                 </div>
                 <button type="submit" class="btn btn-success">Lưu</button>
-                <button type="button" class="btn btn-secondary" id="btnClose">Đóng</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
             </form>
         </div>
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
 <script>
-    const hocphanModal = document.getElementById("hocphanModal");
-    const hocphanForm = document.getElementById("hocphanForm");
-
-    document.getElementById("btnAdd").addEventListener("click", () => {
-        hocphanForm.reset();
-        document.getElementById("maHP").value = "";
-        hocphanModal.style.display = "block";
-    });
-
-    document.getElementById("btnClose").addEventListener("click", () => {
-        hocphanModal.style.display = "none";
-    });
-
-    // Submit form thêm/sửa (AJAX)
-    hocphanForm.addEventListener("submit", function(e){
-        e.preventDefault();
-        const formData = new FormData(hocphanForm);
-        fetch("/api/hocPhan/save", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(Object.fromEntries(formData))
-        })
-            .then(res => res.json())
-            .then(data => {
-                alert(data.message); // thông báo FE
-                location.reload();
-            })
-            .catch(err => alert(err.message));
-    });
+    const loading = document.getElementById("loading");
+    const tbody = document.getElementById("hocphanTableBody");
 
     function searchHP() {
         const keyword = document.getElementById("keyword").value;
+        loading.style.display = "block";
         fetch(`/api/hocPhan/search?keyword=${encodeURIComponent(keyword)}`)
             .then(res => res.json())
             .then(data => {
-                const tbody = document.querySelector("table tbody");
                 tbody.innerHTML = "";
                 data.forEach(hp => {
                     tbody.innerHTML += `
-                    <tr>
-                        <td>${hp.maHP}</td>
-                        <td>${hp.tenHP}</td>
-                        <td>${hp.soTinChi}</td>
-                        <td>${hp.tietTH}</td>
-                        <td>${hp.tietLT}</td>
-                        <td>${hp.tenCTDT || ""}</td>
-                        <td>${hp.tenTienQuyet || ""}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary btnEdit" data-id="${hp.maHP}">Sửa</button>
-                            <button class="btn btn-sm btn-danger btnDelete" data-id="${hp.maHP}">Xóa</button>
-                        </td>
-                    </tr>
-                `;
+                        <tr>
+                            <td>${hp.maHP}</td>
+                            <td>${hp.tenHP}</td>
+                            <td>${hp.soTinChi}</td>
+                            <td>${hp.tietTH}</td>
+                            <td>${hp.tietLT}</td>
+                            <td>${hp.tenCTDT || ""}</td>
+                            <td>${hp.tenTienQuyet || ""}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="openEditModal(${hp.maHP})">Sửa</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteHP(${hp.maHP})">Xóa</button>
+                            </td>
+                        </tr>
+                    `;
                 });
             })
-            .catch(err => alert("Lỗi khi tìm kiếm: " + err));
+            .catch(err => alert("Lỗi: " + err.message))
+            .finally(() => { loading.style.display = "none"; });
     }
 
-    // Sửa học phần
-    document.querySelectorAll(".btnEdit").forEach(btn => {
-        btn.addEventListener("click", function() {
-            const maHP = this.getAttribute("data-id");
-            fetch(`/api/hocPhan/${maHP}`)
-                .then(res => res.json())
-                .then(hp => {
-                    document.getElementById("maHP").value = hp.maHP;
-                    document.getElementById("tenHP").value = hp.tenHP;
-                    document.getElementById("soTinChi").value = hp.soTinChi;
-                    document.getElementById("tietTH").value = hp.tietTH;
-                    document.getElementById("tietLT").value = hp.tietLT;
-                    document.getElementById("maCTDT").value = hp.maCTDT;
-                    document.getElementById("tienQuyet").value = hp.tienQuyet || 0;
-                    hocphanModal.style.display = "block";
-                });
-        });
+    function openAddModal() {
+        document.getElementById("hocphanForm").reset();
+        document.getElementById("maHP").value = "";
+    }
+
+    function openEditModal(maHP) {
+        fetch(`/api/hocPhan/${maHP}`)
+            .then(res => res.json())
+            .then(hp => {
+                document.getElementById("maHP").value = hp.maHP;
+                document.getElementById("tenHP").value = hp.tenHP;
+                document.getElementById("soTinChi").value = hp.soTinChi;
+                document.getElementById("tietTH").value = hp.tietTH;
+                document.getElementById("tietLT").value = hp.tietLT;
+                document.getElementById("maCTDT").value = hp.maCTDT;
+                document.getElementById("tienQuyet").value = hp.tienQuyet || 0;
+                $('#hocphanModal').modal('show');
+            });
+    }
+
+    function deleteHP(maHP) {
+        if (!confirm("Bạn có chắc muốn xóa học phần này?")) return;
+        fetch(`/api/hocPhan/delete/${maHP}`, { method: "DELETE" })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                searchHP();
+            });
+    }
+
+    document.getElementById("hocphanForm").addEventListener("submit", function(e){
+        e.preventDefault();
+        const hocphan = {
+            maHP: document.getElementById("maHP").value,
+            tenHP: document.getElementById("tenHP").value,
+            soTinChi: document.getElementById("soTinChi").value,
+            tietTH: document.getElementById("tietTH").value,
+            tietLT: document.getElementById("tietLT").value,
+            maCTDT: document.getElementById("maCTDT").value,
+            tienQuyet: document.getElementById("tienQuyet").value === "0" ? null : document.getElementById("tienQuyet").value
+        };
+        fetch("/api/hocPhan/save", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(hocphan)
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                $('#hocphanModal').modal('hide');
+                searchHP();
+            });
     });
 
-    // Xóa
-    document.querySelectorAll(".btnDelete").forEach(btn => {
-        btn.addEventListener("click", function() {
-            if (!confirm("Bạn có chắc muốn xóa học phần này?")) return;
-            const maHP = this.getAttribute("data-id");
-            fetch(`/api/hocPhan/delete/${maHP}`, { method: "DELETE" })
-                .then(res => res.json())
-                .then(data => {
-                    alert(data.message); // hiển thị message ngắn gọn
-                    if(res.ok) this.closest("tr").remove();
-                })
-        });
-    });
+    // Load danh sách khi vào trang
+    window.onload = searchHP;
 </script>
 
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

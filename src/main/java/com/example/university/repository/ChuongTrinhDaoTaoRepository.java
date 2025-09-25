@@ -27,16 +27,16 @@ public class ChuongTrinhDaoTaoRepository {
 
     private ChuongTrinhDaoTao mapRow(ResultSet rs, int rowNum) throws SQLException {
         ChuongTrinhDaoTao ctdt = new ChuongTrinhDaoTao();
-        ctdt.setMaCTDT(rs.getInt("MaCTDT"));
+        ctdt.setMaCTDT(rs.getLong("MaCTDT"));
         ctdt.setTenCTDT(rs.getString("TenCTDT"));
         ctdt.setTongTinChi(rs.getInt("TongTinChi"));
-        ctdt.setMaCN(rs.getInt("MaCN"));
+        ctdt.setMaCN(rs.getLong("MaCN"));
         ctdt.setNamHoc(rs.getString("NamHoc"));
         return ctdt;
     }
 
     // Thêm chương trình đào tạo
-    public void addChuongTrinh(String tenCTDT, Integer tongTinChi, Integer maCN, String namHoc) {
+    public void addChuongTrinh(String tenCTDT, Integer tongTinChi, Long maCN, String namHoc) {
         jdbcTemplate.update(
                 "EXEC sp_AddChuongTrinh @TenCTDT = ?, @TongTinChi = ?, @MaCN = ?, @NamHoc = ?",
                 tenCTDT, tongTinChi, maCN, namHoc
@@ -44,7 +44,7 @@ public class ChuongTrinhDaoTaoRepository {
     }
 
     // Cập nhật chương trình đào tạo
-    public void updateChuongTrinh(Integer maCTDT, String tenCTDT, Integer tongTinChi, Integer maCN, String namHoc) {
+    public void updateChuongTrinh(Long maCTDT, String tenCTDT, Integer tongTinChi, Long maCN, String namHoc) {
         jdbcTemplate.update(
                 "EXEC sp_UpdateChuongTrinh @MaCTDT = ?, @TenCTDT = ?, @TongTinChi = ?, @MaCN = ?, @NamHoc = ?",
                 maCTDT, tenCTDT, tongTinChi, maCN, namHoc
@@ -52,7 +52,7 @@ public class ChuongTrinhDaoTaoRepository {
     }
 
     // Xóa chương trình đào tạo
-    public void deleteChuongTrinh(Integer maCTDT) {
+    public void deleteChuongTrinh(Long maCTDT) {
         jdbcTemplate.update(
                 "EXEC sp_DeleteChuongTrinh @MaCTDT = ?",
                 maCTDT
@@ -60,7 +60,7 @@ public class ChuongTrinhDaoTaoRepository {
     }
 
     // Gán nhân viên quản lý cho chương trình đào tạo
-    public void assignNhanVienQuanLy(Integer maCTDT, Integer maNV) {
+    public void assignNhanVienQuanLy(Long maCTDT, Integer maNV) {
         jdbcTemplate.update(
                 "EXEC sp_AssignNVQuanLyCTDT @MaCTDT = ?, @MaNV = ?",
                 maCTDT, maNV
@@ -95,10 +95,10 @@ public class ChuongTrinhDaoTaoRepository {
                 params.toArray(),
                 (rs, rowNum) -> {
                     ChuongTrinhDaoTao ctdt = new ChuongTrinhDaoTao();
-                    ctdt.setMaCTDT(rs.getInt("MaCTDT"));
+                    ctdt.setMaCTDT(rs.getLong("MaCTDT"));
                     ctdt.setTenCTDT(rs.getString("TenCTDT"));
                     ctdt.setTongTinChi(rs.getInt("TongTinChi"));
-                    ctdt.setMaCN(rs.getInt("MaCN"));
+                    ctdt.setMaCN(rs.getLong("MaCN"));
                     ctdt.setNamHoc(rs.getString("NamHoc"));
                     return ctdt;
                 }
@@ -113,10 +113,10 @@ public class ChuongTrinhDaoTaoRepository {
                 new Object[]{keyword},
                 (rs, rowNum) -> {
                     ChuongTrinhDaoTao ctdt = new ChuongTrinhDaoTao();
-                    ctdt.setMaCTDT(rs.getInt("MaCTDT"));
+                    ctdt.setMaCTDT(rs.getLong("MaCTDT"));
                     ctdt.setTenCTDT(rs.getString("TenCTDT"));
                     ctdt.setTongTinChi(rs.getInt("TongTinChi"));
-                    ctdt.setMaCN(rs.getInt("MaCN"));
+                    ctdt.setMaCN(rs.getLong("MaCN"));
                     ctdt.setNamHoc(rs.getString("NamHoc"));
                     return ctdt;
                 }
@@ -127,7 +127,7 @@ public class ChuongTrinhDaoTaoRepository {
         return jdbcTemplate.query("EXEC sp_SearchCTDT @keyWord = ?", this::mapRow, keyWord);
     }
 
-    public Map<String, Object> getQuanLyCTDT(Integer maCTDT) {
+    public Map<String, Object> getQuanLyCTDT(Long maCTDT) {
         String sql = "EXEC sp_GetQuanLyCTDT @MaCTDT = ?";
         return jdbcTemplate.queryForMap(sql, maCTDT);
     }

@@ -6,8 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ChiTietDiem {
-    private Integer maSV;
-    private Integer maHP;
+    private Long maSV;
+    private Long maHP;
+    private Integer lanThi;
     private Double diemCC;
     private Double diemGK;
     private Double diemCK;

@@ -22,7 +22,7 @@ public class SinhVienController {
     }
 
     @GetMapping("/{id}")
-    public SinhVien getById(@PathVariable int id) {
+    public SinhVien getById(@PathVariable Long id) {
         return service.getById(id);
     }
 
@@ -33,14 +33,14 @@ public class SinhVienController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable int id, @RequestBody SinhVien sv) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody SinhVien sv) {
         sv.setMaSV(id);
         service.update(sv);
         return ResponseEntity.ok(Collections.singletonMap("message", "Cập nhật sinh viên thành công"));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable int id) {
+    public ResponseEntity<?> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.ok(Collections.singletonMap("message", "Xóa sinh viên thành công"));
     }

@@ -10,7 +10,16 @@ public class DangKyService {
     @Autowired
     private DangKyRepository repo;
 
-    public void dangKyHoc(int maSV, String maLHP) {
+    public void dangKyHoc(Long maSV, String maLHP) {
         repo.dangKyHoc(maSV, maLHP);
+    }
+
+    public boolean huyDangKyHoc(Long maSV, String maLHP) {
+        try {
+            repo.huyDangKyHoc(maSV, maLHP);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

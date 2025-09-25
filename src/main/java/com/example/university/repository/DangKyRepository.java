@@ -10,7 +10,11 @@ public class DangKyRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public void dangKyHoc(int maSV, String maLHP) {
+    public void dangKyHoc(Long maSV, String maLHP) {
         jdbcTemplate.update("EXEC sp_DangKyHoc ?, ?", maSV, maLHP);
+    }
+
+    public void huyDangKyHoc(Long maSV, String maLHP) {
+        jdbcTemplate.update("EXEC sp_HuyDangKyHoc ?, ?", maSV, maLHP);
     }
 }

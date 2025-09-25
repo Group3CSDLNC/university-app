@@ -1,5 +1,6 @@
 package com.example.university.web.controller;
 
+import com.example.university.model.HocPhan;
 import com.example.university.model.Khoa;
 import com.example.university.service.KhoaService;
 import com.example.university.service.SessionService;

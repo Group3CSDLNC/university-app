@@ -13,11 +13,11 @@ public class BaoCaoService {
     @Autowired
     private BaoCaoRepository repo;
 
-    public List<Map<String,Object>> bangDiem(int maSV, int maCTDT) {
+    public List<Map<String,Object>> bangDiem(Long maSV, Long maCTDT) {
         return repo.getBangDiem(maSV, maCTDT);
     }
 
-    public List<Map<String,Object>> chuaHoanThanh(int maCTDT) {
+    public List<Map<String,Object>> chuaHoanThanh(Long maCTDT) {
         return repo.getChuaHoanThanh(maCTDT);
     }
 

@@ -68,7 +68,7 @@ public class ChuongTrinhDaoTaoController {
             List<NhanVien> nhanViens = nhanVienService.getAll();
 
 
-            Map<Integer, String> cnMap = cns.stream()
+            Map<Long, String> cnMap = cns.stream()
                     .collect(Collectors.toMap(ChuyenNganh::getMaCN, ChuyenNganh::getTenCN));
 
             List<ChuongTrinhDaoTao> ctdtList = ctdtService.listCTDT(maKhoa, namHoc, maNVQuanLy);

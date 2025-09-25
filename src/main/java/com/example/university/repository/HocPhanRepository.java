@@ -20,13 +20,13 @@ public class HocPhanRepository {
         @Override
         public HocPhan mapRow(ResultSet rs, int rowNum) throws SQLException {
             HocPhan hp = new HocPhan();
-            hp.setMaHP(rs.getInt("MaHP"));
+            hp.setMaHP(rs.getLong("MaHP"));
             hp.setTenHP(rs.getString("TenHP"));
             hp.setSoTinChi(rs.getInt("SoTinChi"));
             hp.setTietTH(rs.getInt("TietTH"));
             hp.setTietLT(rs.getInt("TietLT"));
-            hp.setMaCTDT(rs.getInt("MaCTDT"));
-            hp.setTienQuyet(rs.getObject("TienQuyet") != null ? rs.getInt("TienQuyet") : null);
+            hp.setMaCTDT(rs.getLong("MaCTDT"));
+            hp.setTienQuyet(rs.getString("TienQuyet") != null ? rs.getLong("TienQuyet") : null);
             return hp;
         }
     };
@@ -80,7 +80,7 @@ public class HocPhanRepository {
         return jdbcTemplate.query("EXEC sp_SearchHocPhanByKeyword ?", new Object[]{keyword}, hocPhanMapper);
     }
 
-    public boolean existsByTenHPAndMaCTDT(String tenHP, int maCTDT, Integer excludeMaHP) {
+    public boolean existsByTenHPAndMaCTDT(String tenHP, Long maCTDT, Long excludeMaHP) {
         String sql = "SELECT COUNT(*) FROM HocPhan WHERE TenHP = ? AND MaCTDT = ?";
         Object[] params;
         if (excludeMaHP != null) {
@@ -93,7 +93,7 @@ public class HocPhanRepository {
         return count != null && count > 0;
     }
 
-    public int countByMaCTDT(int maCTDT) {
+    public int countByMaCTDT(Long maCTDT) {
         String sql = "SELECT COUNT(*) FROM HocPhan WHERE MaCTDT = ?";
         Integer count = jdbcTemplate.queryForObject(sql, new Object[]{maCTDT}, Integer.class);
         return count != null ? count : 0;

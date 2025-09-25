@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 public class CTDTNhanVien {
     private Integer id;
-    private Integer maCTDT;
+    private Long maCTDT;
     private Integer maNV;
 }

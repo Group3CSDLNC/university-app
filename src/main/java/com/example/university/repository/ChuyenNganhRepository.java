@@ -21,7 +21,7 @@ public class ChuyenNganhRepository {
         @Override
         public ChuyenNganh mapRow(ResultSet rs, int rowNum) throws SQLException {
             ChuyenNganh cn = new ChuyenNganh();
-            cn.setMaCN(rs.getInt("MaCN"));
+            cn.setMaCN(rs.getLong("MaCN"));
             cn.setTenCN(rs.getString("TenCN"));
             cn.setMaKhoa(rs.getInt("MaKhoa"));
             return cn;

@@ -1,16 +1,20 @@
 package com.example.university.model;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
 
 @Component
+@Getter
+@Setter
 @Scope(value = "session", proxyMode = ScopedProxyMode.TARGET_CLASS)
 public class SessionUser {
     private Integer maTK;
     private String tenDangNhap;
     private String loaiTaiKhoan;
-    private Integer maSV;
+    private Long maSV;
     private Integer maNV;
 
     public boolean isLoggedIn() {
@@ -24,21 +28,5 @@ public class SessionUser {
         this.maSV = null;
         this.maNV = null;
     }
-
-    // getter & setter
-    public Integer getMaTK() { return maTK; }
-    public void setMaTK(Integer maTK) { this.maTK = maTK; }
-
-    public String getTenDangNhap() { return tenDangNhap; }
-    public void setTenDangNhap(String tenDangNhap) { this.tenDangNhap = tenDangNhap; }
-
-    public String getLoaiTaiKhoan() { return loaiTaiKhoan; }
-    public void setLoaiTaiKhoan(String loaiTaiKhoan) { this.loaiTaiKhoan = loaiTaiKhoan; }
-
-    public Integer getMaSV() { return maSV; }
-    public void setMaSV(Integer maSV) { this.maSV = maSV; }
-
-    public Integer getMaNV() { return maNV; }
-    public void setMaNV(Integer maNV) { this.maNV = maNV; }
 }
 

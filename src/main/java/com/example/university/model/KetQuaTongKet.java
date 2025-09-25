@@ -6,8 +6,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class KetQuaTongKet {
-    private Integer maSV;
-    private Integer maHP;
+    private Long maSV;
+    private Long maHP;
     private Double tongKet;
     private String xepLoai;
 }

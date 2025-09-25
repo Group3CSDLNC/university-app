@@ -63,7 +63,7 @@ public class ChuongTrinhDaoTaoApiController {
     }
 
     @DeleteMapping("/delete/{maCTDT}")
-    public ResponseEntity<?> deleteCTDT(@PathVariable Integer maCTDT) {
+    public ResponseEntity<?> deleteCTDT(@PathVariable Long maCTDT) {
         try {
             checkLogin();
             service.deleteChuongTrinh(maCTDT);
@@ -74,7 +74,7 @@ public class ChuongTrinhDaoTaoApiController {
     }
 
     @PostMapping("/assign")
-    public ResponseEntity<?> assignNhanVienQuanLy(@RequestParam Integer maCTDT,
+    public ResponseEntity<?> assignNhanVienQuanLy(@RequestParam Long maCTDT,
                                                   @RequestParam Integer maNV) {
         try {
             checkLogin();
@@ -86,7 +86,7 @@ public class ChuongTrinhDaoTaoApiController {
     }
 
     @GetMapping("/{maCTDT}")
-    public ResponseEntity<?> getCTDT(@PathVariable Integer maCTDT) {
+    public ResponseEntity<?> getCTDT(@PathVariable Long maCTDT) {
         try {
             checkLogin();
             ChuongTrinhDaoTao ctdt = service.listCTDT(null, null, null)
@@ -101,7 +101,7 @@ public class ChuongTrinhDaoTaoApiController {
     }
 
     @GetMapping("/{maCTDT}/quan-ly")
-    public ResponseEntity<?> getQuanLyCTDT(@PathVariable Integer maCTDT) {
+    public ResponseEntity<?> getQuanLyCTDT(@PathVariable Long maCTDT) {
         try {
             Map<String, Object> result = service.getQuanLyCTDT(maCTDT);
             return ResponseEntity.ok(result);

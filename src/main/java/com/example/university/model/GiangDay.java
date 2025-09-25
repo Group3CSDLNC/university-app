@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 public class GiangDay {
     private Integer maGV;
-    private String maLHP;
+    private Long maLHP;
     private Integer soTietPhanCong;
 }

@@ -1,32 +1,41 @@
+-- ============================================
+-- Thêm Lớp học phần
+-- ============================================
 CREATE OR ALTER PROCEDURE sp_AddLopHocPhan
-    @MaHP INT,
-    @HocKy INT,
+    @MaHP   BIGINT,
+    @HocKy  INT,
     @NamHoc VARCHAR(9),
-    @MaCTDT INT,
-    @SiSo INT
+    @MaCTDT BIGINT,
+    @SiSo   INT
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Tạo sequence
+    -- Sinh sequence: lấy 3 số cuối cùng của MaLHP
     DECLARE @Seq INT;
-    SELECT @Seq = ISNULL(MAX(CAST(RIGHT(MaLHP,3) AS INT)),0) + 1
+    SELECT @Seq = ISNULL(MAX(CAST(RIGHT(CAST(MaLHP AS VARCHAR(20)), 3) AS INT)), 0) + 1
     FROM LopHocPhan
-    WHERE HocKy = @HocKy AND NamHoc = @NamHoc AND MaHP IN (
-        SELECT MaHP FROM HocPhan WHERE MaCTDT = @MaCTDT
-    );
+    WHERE HocKy = @HocKy
+      AND NamHoc = @NamHoc
+      AND MaHP IN (SELECT MaHP FROM HocPhan WHERE MaCTDT = @MaCTDT);
 
-    DECLARE @MaLHP VARCHAR(20);
-    SET @MaLHP = CONCAT('CT', @MaCTDT, '_', @HocKy, '_', @NamHoc, '_', FORMAT(@Seq,'000'));
+    DECLARE @MaLHP BIGINT;
+    -- Tạo MaLHP từ CTDT + Học kỳ + Năm học + Seq
+    -- Dùng CAST sang BIGINT
+    SET @MaLHP = CAST(CONCAT(@MaCTDT, @HocKy, REPLACE(@NamHoc, '-', ''), FORMAT(@Seq, '000')) AS BIGINT);
 
     INSERT INTO LopHocPhan (MaLHP, MaHP, HocKy, NamHoc, SiSo)
     VALUES (@MaLHP, @MaHP, @HocKy, @NamHoc, @SiSo);
 
     SELECT @MaLHP AS MaLHP;
 END;
+GO
 
+-- ============================================
+-- Cập nhật Lớp học phần
+-- ============================================
 CREATE OR ALTER PROCEDURE sp_UpdateLopHocPhan
-    @MaLHP VARCHAR(20),
+    @MaLHP BIGINT,
     @HocKy INT,
     @NamHoc VARCHAR(9),
     @SiSo INT
@@ -40,8 +49,11 @@ BEGIN
     WHERE MaLHP = @MaLHP;
 END;
 
+-- ============================================
+-- Xóa Lớp học phần
+-- ============================================
 CREATE OR ALTER PROCEDURE sp_DeleteLopHocPhan
-    @MaLHP VARCHAR(20)
+    @MaLHP BIGINT
 AS
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM LopHocPhan WHERE MaLHP = @MaLHP)
@@ -67,3 +79,57 @@ BEGIN
       AND (@MaGV IS NULL OR gd.MaGV = @MaGV);
 END;
 
+-- ============================================
+-- Lấy danh sách Lớp học phần theo Sinh viên
+-- ============================================
+CREATE OR ALTER PROCEDURE sp_GetLopHocPhanBySV
+    @MaSV   BIGINT,
+    @NamHoc NVARCHAR(9),
+    @HocKy  INT,
+    @MaCN   BIGINT = NULL   -- Tham số lọc chuyên ngành (NULL = bỏ lọc)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        lhp.MaLHP,
+        hp.MaHP,
+        hp.TenHP,
+        hp.SoTinChi,
+        hp.TietLT,
+        hp.TietTH,
+        lhp.SiSo AS SiSoToiDa,
+        COUNT(DISTINCT dk.MaSV) AS SoLuongDaDangKy,
+        (lhp.SiSo - COUNT(DISTINCT dk.MaSV)) AS SlotConLai,
+        lhp.NamHoc,
+        lhp.HocKy,
+        MIN(ph.SoPhong) AS PhongHoc,
+        MIN(lh.TietBatDau) AS TietBatDau,
+        MIN(lh.ThuTrongTuan) AS ThuTrongTuan,        -- Thêm thứ trong tuần
+        MIN(lh.NgayBatDau)  AS NgayBatDau,           -- Thêm ngày bắt đầu
+        MAX(lh.NgayKetThuc) AS NgayKetThuc,          -- Thêm ngày kết thúc
+        gv.HoTen AS GiangVienChinh,
+        STRING_AGG(tg.HoTen, ', ') AS TroGiang,
+        cn.TenCN AS TenChuyenNganh,
+        ctdt.TenCTDT AS TenChuongTrinhDaoTao,
+        CASE WHEN dk_sv.MaSV IS NOT NULL THEN 1 ELSE 0 END AS IsDangKy
+    FROM LopHocPhan lhp
+    JOIN HocPhan hp ON lhp.MaHP = hp.MaHP
+    JOIN ChuongTrinhDaoTao ctdt ON hp.MaCTDT = ctdt.MaCTDT
+    JOIN ChuyenNganh cn ON ctdt.MaCN = cn.MaCN
+    LEFT JOIN GiangDay gd ON gd.MaLHP = lhp.MaLHP
+    LEFT JOIN NhanVien gv ON gd.MaGV = gv.MaNV
+    LEFT JOIN GiangVien_TroGiang gvtg ON gvtg.MaHP = hp.MaHP
+    LEFT JOIN NhanVien tg ON gvtg.MaGV_TroGiang = tg.MaNV
+    LEFT JOIN LichHoc lh ON lh.MaLHP = lhp.MaLHP
+    LEFT JOIN PhongHoc ph ON lh.MaPH = ph.MaPH
+    LEFT JOIN DangKy dk ON dk.MaLHP = lhp.MaLHP
+    LEFT JOIN DangKy dk_sv ON dk_sv.MaLHP = lhp.MaLHP AND dk_sv.MaSV = @MaSV
+    WHERE lhp.NamHoc = @NamHoc
+      AND lhp.HocKy  = @HocKy
+      AND (@MaCN IS NULL OR ctdt.MaCN = @MaCN)
+    GROUP BY lhp.MaLHP, hp.MaHP, hp.TenHP, hp.SoTinChi, hp.TietLT, hp.TietTH,
+             lhp.SiSo, lhp.NamHoc, lhp.HocKy, gv.HoTen, cn.TenCN, ctdt.TenCTDT, dk_sv.MaSV
+    ORDER BY lhp.MaLHP;
+END;
+GO

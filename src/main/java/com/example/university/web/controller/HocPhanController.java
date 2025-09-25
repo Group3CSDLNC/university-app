@@ -44,12 +44,12 @@ public class HocPhanController {
             hocphans = hocPhanService.getAllHocPhan();
         }
 
-        Map<Integer, String> hocphanMap = hocphans.stream()
+        Map<Long, String> hocphanMap = hocphans.stream()
                 .collect(Collectors.toMap(HocPhan::getMaHP, HocPhan::getTenHP));
 
         List<ChuongTrinhDaoTao> ctdts = chuongTrinhDaoTaoService.getAll("");
 
-        Map<Integer, String> ctdtMap = ctdts.stream()
+        Map<Long, String> ctdtMap = ctdts.stream()
                 .collect(Collectors.toMap(ChuongTrinhDaoTao::getMaCTDT, ChuongTrinhDaoTao::getTenCTDT));
 
         model.addAttribute("hocphans", hocphans);

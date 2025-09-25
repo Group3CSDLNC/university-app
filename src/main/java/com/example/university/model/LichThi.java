@@ -7,8 +7,8 @@ import lombok.Setter;
 @Setter
 public class LichThi {
     private Integer maLichThi;
-    private String maLHP;
-    private java.sql.Date ngayThi;
-    private java.sql.Time gioThi;
-    private String maPH;
+    private Long maLHP;
+    private String ngayThi;
+    private String gioThi;
+    private Integer maPH;
 }
