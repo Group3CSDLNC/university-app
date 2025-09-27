@@ -68,4 +68,9 @@ public class HocPhanService {
     public int countByMaCTDT(Long maCTDT) {
         return repo.countByMaCTDT(maCTDT);
     }
+
+    public List<HocPhan> getByMaCTDT(Long maCTDT) {
+        return repo.getByMaCTDT(maCTDT);
+
+    }
 }

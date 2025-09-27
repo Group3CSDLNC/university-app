@@ -26,6 +26,15 @@ public class NhanVienController {
         return service.getById(id);
     }
 
+    @GetMapping("/giangvienList")
+    public List<NhanVien> getGiangVien() {
+        return service.findByVaiTro(Collections.singletonList("Giang vien"));
+    }
+    @GetMapping("/trogiangList")
+    public List<NhanVien> getTroGiang() {
+        return service.findByVaiTro(Collections.singletonList("Tro giang"));
+    }
+
     @PostMapping
     public ResponseEntity<?> add(@RequestBody NhanVien nv) {
         service.add(nv);
@@ -51,4 +60,15 @@ public class NhanVienController {
         return ResponseEntity.ok(service.danhSachLuongGV(thang, nam));
     }
 
+    // Giảng viên chính
+    @GetMapping("/giangVienChinh/by-lhp/{maLHP}")
+    public List<NhanVien> getGiangVienChinhByLHP(@PathVariable Long maLHP) {
+        return service.getGiangVienChinhByLHP(maLHP);
+    }
+
+    // Trợ giảng
+    @GetMapping("/troGiang/by-lhp/{maLHP}")
+    public List<NhanVien> getTroGiangByLHP(@PathVariable Long maLHP) {
+        return service.getTroGiangByLHP(maLHP);
+    }
 }

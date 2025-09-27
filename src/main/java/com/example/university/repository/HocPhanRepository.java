@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository
@@ -98,5 +99,20 @@ public class HocPhanRepository {
         Integer count = jdbcTemplate.queryForObject(sql, new Object[]{maCTDT}, Integer.class);
         return count != null ? count : 0;
     }
+    public List<HocPhan> getByMaCTDT(Long maCTDT) {
+        String sql = "SELECT * FROM HocPhan WHERE MaCTDT = ?";
+        return jdbcTemplate.query(sql, new Object[]{maCTDT}, (rs, rowNum) -> {
+            HocPhan hp = new HocPhan();
+            hp.setMaHP(rs.getLong("MaHP"));
+            hp.setTenHP(rs.getString("TenHP"));
+            hp.setSoTinChi(rs.getInt("SoTinChi"));
+            hp.setTietTH(rs.getInt("TietTH"));
+            hp.setTietLT(rs.getInt("TietLT"));
+            hp.setMaCTDT(rs.getLong("MaCTDT"));
+            hp.setTienQuyet(rs.getObject("TienQuyet") != null ? rs.getLong("TienQuyet") : null);
+            return hp;
+        });
+    }
+
 
 }

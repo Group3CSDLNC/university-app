@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -65,7 +66,7 @@ public class ChuongTrinhDaoTaoController {
 
             List<ChuyenNganh> cns = chuyenNganhService.getAll();
             List<Khoa> khoas = khoaService.getAll();
-            List<NhanVien> nhanViens = nhanVienService.getAll();
+            List<NhanVien> nhanViens = nhanVienService.findByVaiTro(Collections.singletonList("Quan ly"));
 
 
             Map<Long, String> cnMap = cns.stream()

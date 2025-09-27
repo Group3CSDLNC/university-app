@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .navbar-brand { font-weight: bold; }
+        .nav-link { color: #6c757d !important; }
+        .nav-link.active { color: #007bff !important; }
+        .dropdown-menu { min-width: 200px; }
+    </style>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý trung tâm đào tạo</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/dashboard/admin">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/khoa/list">Khoa</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/hocPhan/hocphan_list">Học phần</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/lopHocPhan/lopHocPhan_list">Lớp Học phần</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/hoc-vien/list">Học viên</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/nhan-vien/list">Nhân viên</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/phong-hoc/list">Phòng học</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/luong/list">Lương</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                    <span th:text="${session.userName} ?: 'Admin'"></span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="/profile">Hồ sơ</a>
+                    <a class="dropdown-item" href="/logout">Đăng xuất</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2>Danh sách Lớp học phần</h2>
+
+    <!-- Filter Section -->
+    <div class="search-add-group mb-3 d-flex align-items-center">
+        <!-- CTDT -->
+        <select id="maCTDTFilter" class="form-control mr-2">
+            <option value="">-- Tất cả CTDT --</option>
+            <option th:each="ctdt : ${ctdtList}"
+                    th:value="${ctdt.maCTDT}"
+                    th:text="${ctdt.tenCTDT}"></option>
+        </select>
+
+        <!-- Học phần -->
+        <select id="maHPFilter" class="form-control mr-2">
+            <option value="">-- Tất cả Học phần --</option>
+            <!-- sẽ được load động theo CTDT -->
+        </select>
+
+        <!-- Năm học -->
+        <select id="namHocFilter" class="form-control mr-2">
+            <option value="">-- Tất cả năm học --</option>
+            <option th:each="year : ${years}" th:value="${year}" th:text="${year}"></option>
+        </select>
+
+        <!-- Học kỳ -->
+        <select id="hocKyFilter" class="form-control mr-2">
+            <option value="">-- Tất cả học kỳ --</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">Hè</option>
+        </select>
+
+        <!-- đẩy nút sang bên phải -->
+        <div class="ml-auto d-flex">
+            <button class="btn btn-outline-secondary mr-2" onclick="searchLHP()">Lọc</button>
+            <button class="btn btn-success" onclick="openAddModal()">Thêm mới</button>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">Đang tải...</div>
+
+    <!-- Table -->
+    <table class="table table-bordered table-hover">
+        <thead>
+        <tr>
+            <th>MaLHP</th>
+            <th>MaHP</th>
+            <th>TenHP</th>
+            <th>SoTinChi</th>
+            <th>HocKy</th>
+            <th>NamHoc</th>
+            <th>SiSo</th>
+            <th>MaCTDT</th>
+            <th>TenCTDT</th>
+            <th>TenCN</th>
+            <th>TenKhoa</th>
+            <th>TenGiangVien</th>
+            <th>Hành động</th>
+        </tr>
+        </thead>
+        <tbody id="lopHocPhanTableBody"></tbody>
+    </table>
+</div>
+
+<!-- Modal Add/Edit -->
+<div class="modal fade" id="lopHocPhanModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content p-3">
+            <h5 class="modal-title mb-3" id="lopHocPhanModalTitle">Thêm Lớp học phần</h5>
+            <form id="lopHocPhanForm">
+                <input type="hidden" id="maLHP">
+
+                <!-- CTDT -->
+                <div class="form-group">
+                    <label>Chương trình đào tạo</label>
+                    <select id="maCTDTInput" class="form-control" required>
+                        <option value="">-- Chọn CTDT --</option>
+                        <option th:each="ctdt : ${ctdtList}"
+                                th:value="${ctdt.maCTDT}"
+                                th:text="${ctdt.tenCTDT}"></option>
+                    </select>
+                </div>
+
+                <!-- Học phần -->
+                <div class="form-group">
+                    <label>Học phần</label>
+                    <select id="maHPInput" class="form-control" required>
+                        <option value="">-- Chọn học phần --</option>
+                        <!-- load động -->
+                    </select>
+                </div>
+
+                <!-- Năm học -->
+                <div class="form-group">
+                    <label>Năm học</label>
+                    <select id="namHocInput" class="form-control" required>
+                        <option th:each="year : ${years}"
+                                th:value="${year}"
+                                th:text="${year}"></option>
+                    </select>
+                </div>
+
+                <!-- Học kỳ -->
+                <div class="form-group">
+                    <label>Học kỳ</label>
+                    <select id="hocKyInput" class="form-control" required>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">Hè</option>
+                    </select>
+                </div>
+
+                <!-- Sĩ số -->
+                <div class="form-group">
+                    <label>Sĩ số</label>
+                    <input type="number" id="siSoInput" class="form-control" required>
+                </div>
+
+                <button type="submit" class="btn btn-success">Lưu</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Gán Giảng viên -->
+<div class="modal fade" id="ganGVModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content p-3">
+            <h5 class="modal-title mb-3">Gán Giảng viên</h5>
+            <input type="hidden" id="gvMaLHP">
+            <input type="hidden" id="gvMaHP">
+            <input type="hidden" id="currentMaGV" />
+            <input type="hidden" id="currentMaTG" />
+
+
+            <div class="form-group">
+                <label>Giảng viên chính</label>
+                <select id="gvChinhSelect" class="form-control"></select>
+                <!-- ô số tiết phân công GV chính -->
+                <input type="number" id="soTietGVChinh" class="form-control mt-2" placeholder="Số tiết phân công">
+                <button class="btn btn-success mt-2" onclick="ganGVChinh()">Gán GV chính</button>
+            </div>
+
+            <div class="form-group">
+                <label>Trợ giảng</label>
+                <select id="gvTroSelect" class="form-control"></select>
+                <button class="btn btn-primary mt-2" onclick="ganGVTro()">Gán trợ giảng</button>
+            </div>
+
+            <button type="button" class="btn btn-secondary mt-2" data-dismiss="modal">Đóng</button>
+        </div>
+    </div>
+</div>
+
+
+<script th:inline="javascript">
+    const loading = document.getElementById("loading");
+    const tbody = document.getElementById("lopHocPhanTableBody");
+
+    // Load danh sách
+    function searchLHP() {
+        const params = new URLSearchParams({
+            maCTDT: document.getElementById("maCTDTFilter").value,
+            maHP: document.getElementById("maHPFilter").value,
+            namHoc: document.getElementById("namHocFilter").value,
+            hocKy: document.getElementById("hocKyFilter").value
+        });
+
+        loading.style.display = "block";
+        fetch(`/api/lopHocPhan/search?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                tbody.innerHTML = ""; // xóa cũ
+
+                data.forEach(lhp => {
+                    const tr = document.createElement("tr");
+
+                    // Tạo các ô
+                    ["MaLHP","MaHP","TenHP","SoTinChi","HocKy","NamHoc","SiSo",
+                        "MaCTDT","TenCTDT","TenCN","TenKhoa","TenGiangVien"].forEach(key => {
+                        const td = document.createElement("td");
+                        td.textContent = lhp[key] ?? "";
+                        tr.appendChild(td);
+                    });
+
+                    // Tạo ô chứa nút
+                    const tdActions = document.createElement("td");
+                    const btnGroup = document.createElement("div");
+                    btnGroup.className = "btn-group";
+                    btnGroup.setAttribute("role","group");
+                    btnGroup.setAttribute("aria-label","Actions");
+
+                    const btnEdit = document.createElement("button");
+                    btnEdit.className = "btn btn-sm btn-warning";
+                    btnEdit.textContent = "Sửa";
+                    btnEdit.onclick = () => editLHP(lhp.MaLHP, lhp.MaHP, lhp.MaCTDT, lhp.HocKy, lhp.NamHoc, lhp.SiSo);
+
+                    const btnDelete = document.createElement("button");
+                    btnDelete.className = "btn btn-sm btn-danger";
+                    btnDelete.textContent = "Xóa";
+                    btnDelete.onclick = () => deleteLHP(lhp.MaLHP);
+
+                    const btnGanGV = document.createElement("button");
+                    btnGanGV.className = "btn btn-sm btn-info";
+                    btnGanGV.textContent = "Gán GV";
+                    btnGanGV.onclick = () => openGanGVModal(lhp.MaLHP, lhp.MaHP, lhp.MaGiangVien, lhp.MaTroGiang, lhp.SoTietPhanCong);
+
+                    btnGroup.append(btnEdit, btnDelete, btnGanGV);
+                    tdActions.appendChild(btnGroup);
+                    tr.appendChild(tdActions);
+
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => alert("Lỗi: " + err.message))
+            .finally(() => { loading.style.display = "none"; });
+    }
+
+
+    function loadHocPhanByCTDT(maCTDT, selectElementId, defaultLabel) {
+        const maHPSelect = document.getElementById(selectElementId);
+        maHPSelect.innerHTML = `<option value="">${defaultLabel}</option>`;
+
+        if (maCTDT) {
+            fetch(`/api/hocPhan/by-ctdt/${maCTDT}`)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(hp => {
+                        const option = document.createElement("option");
+                        option.value = hp.maHP;
+                        option.textContent = hp.tenHP;
+                        maHPSelect.appendChild(option);
+                    });
+                })
+                .catch(err => alert("Lỗi tải học phần: " + err.message));
+        }
+    }
+
+    // Filter section
+    document.getElementById("maCTDTFilter").addEventListener("change", function () {
+        loadHocPhanByCTDT(this.value, "maHPFilter", "-- Tất cả Học phần --");
+    });
+
+    // Form thêm/sửa
+    document.getElementById("maCTDTInput").addEventListener("change", function () {
+        loadHocPhanByCTDT(this.value, "maHPInput", "-- Chọn học phần --");
+    });
+
+
+
+    // Mở modal thêm
+    function openAddModal() {
+        document.getElementById("lopHocPhanForm").reset();
+        document.getElementById("maLHP").value = "";
+
+        // Enable chọn HP và CTDT khi thêm
+        document.getElementById("maHPInput").disabled = false;
+        document.getElementById("maCTDTInput").disabled = false;
+
+        document.getElementById("lopHocPhanModalTitle").innerText = "Thêm Lớp học phần";
+        $('#lopHocPhanModal').modal('show');
+    }
+
+    // Mở modal sửa
+    function editLHP(maLHP, maHP, maCTDT, hocKy, namHoc, siSo) {
+        console.log('sonn: ', maLHP, ' ', maHP, ' ', maCTDT)
+        // Enable chọn HP và CTDT khi sửa
+        document.getElementById("maHPInput").disabled = false;
+        document.getElementById("maCTDTInput").disabled = false;
+
+        // Gán dữ liệu vào form
+        document.getElementById("maLHP").value = maLHP;
+        document.getElementById("hocKyInput").value = hocKy;
+        document.getElementById("namHocInput").value = namHoc;
+        document.getElementById("siSoInput").value = siSo;
+
+        // Gán CTDT trước → vì học phần đang phụ thuộc CTDT
+        document.getElementById("maCTDTInput").value = maCTDT;
+
+        // Gán luôn học phần
+        document.getElementById("maHPInput").value = maHP;
+
+        // Gọi API load học phần theo CTDT trước khi set maHP
+        fetch(`/api/hocPhan/by-ctdt/${maCTDT}`)
+            .then(res => res.json())
+            .then(data => {
+                const hpSelect = document.getElementById("maHPInput");
+                hpSelect.innerHTML = '<option value="">-- Chọn học phần --</option>';
+
+                data.forEach(hp => {
+                    const opt = document.createElement("option");
+                    opt.value = hp.maHP;
+                    opt.text = hp.tenHP;
+                    hpSelect.appendChild(opt);
+                });
+
+                // Sau khi load xong mới gán maHP
+                hpSelect.value = maHP;
+            })
+            .catch(err => console.error("Lỗi load học phần:", err));
+
+        // Đổi tiêu đề modal
+        document.getElementById("lopHocPhanModalTitle").innerText = "Sửa Lớp học phần";
+
+        // Hiển thị modal
+        $('#lopHocPhanModal').modal('show');
+    }
+
+    // Mở modal gán GV
+    function openGanGVModal(maLHP, maHP, maGV, maTG, soTietPhanCong) {
+        document.getElementById("gvMaLHP").value = maLHP;
+        document.getElementById("gvMaHP").value = maHP;
+
+        // Lưu giảng viên hiện tại vào input ẩn
+        document.getElementById("currentMaGV").value = maGV; // GV chính hiện tại
+        document.getElementById("currentMaTG").value = maTG; // Trợ giảng hiện tại
+        document.getElementById("soTietGVChinh").value = soTietPhanCong; // Trợ giảng hiện tại
+
+
+        const gvChinhSelect = document.getElementById("gvChinhSelect");
+        const gvTroSelect = document.getElementById("gvTroSelect");
+
+        // Reset dropdown
+        gvChinhSelect.innerHTML = '<option value="">-- Chọn GV chính --</option>';
+        gvTroSelect.innerHTML = '<option value="">-- Chọn trợ giảng --</option>';
+
+        // 1️⃣ Load danh sách toàn bộ GV chính
+        fetch('/api/nhanVien/giangvienList')
+            .then(res => res.json())
+            .then(listGV => {
+                listGV.forEach(gv => {
+                    const opt = document.createElement("option");
+                    opt.value = gv.maNV;
+                    opt.textContent = gv.hoTen;
+                    gvChinhSelect.appendChild(opt);
+                });
+
+                // 2️⃣ Load giảng viên chính đã gán cho lớp để chọn mặc định
+                return fetch(`/api/nhanVien/giangVienChinh/by-lhp/${maLHP}`);
+            })
+            .then(res => res.json())
+            .then(assignedGV => {
+                if (assignedGV.length > 0) {
+                    gvChinhSelect.value = assignedGV[0].maNV; // mặc định chọn người đã gán
+                }
+            })
+            .catch(err => console.error("Lỗi load GV chính:", err));
+
+        // 1️⃣ Load danh sách toàn bộ Trợ giảng
+        fetch('/api/nhanVien/trogiangList')
+            .then(res => res.json())
+            .then(listTG => {
+                listTG.forEach(tg => {
+                    const opt = document.createElement("option");
+                    opt.value = tg.maNV;
+                    opt.textContent = tg.hoTen;
+                    gvTroSelect.appendChild(opt);
+                });
+
+                // 2️⃣ Load trợ giảng đã gán cho lớp
+                return fetch(`/api/nhanVien/troGiang/by-lhp/${maLHP}`);
+            })
+            .then(res => res.json())
+            .then(assignedTG => {
+                if (assignedTG.length > 0) {
+                    gvTroSelect.value = assignedTG[0].maNV; // chọn mặc định người đã gán
+                }
+            })
+            .catch(err => console.error("Lỗi load Trợ giảng:", err));
+
+        // Hiển thị modal
+        $('#ganGVModal').modal('show');
+    }
+
+    // Gán giảng viên chính
+    function ganGVChinh() {
+        const maLHP = document.getElementById("gvMaLHP").value;
+        const maHP = document.getElementById("gvMaHP").value;
+        const maGV = document.getElementById("gvChinhSelect").value;
+        const soTietPhanCong = document.getElementById("soTietGVChinh").value;
+
+        const maGVOld = document.getElementById("currentMaGV").value || null;
+
+
+        if (!maGV) { alert("Chọn giảng viên chính!"); return; }
+
+        const params = new URLSearchParams();
+        params.append("maLHP", maLHP);
+        params.append("maGV", maGV);
+        params.append("soTietPhanCong", soTietPhanCong);
+
+        // Chỉ gửi maGVOld nếu có
+        if (maGVOld) {
+            params.append("maGVOld", maGVOld);
+        }
+        fetch("/api/giangDay/assignGV", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString()
+        })
+            .then(res => {
+                if (!res.ok) throw new Error("Server lỗi: " + res.status);
+                return res.json(); // chỉ parse khi có body
+            })
+            .then(data => {
+                alert(data.message);
+                $('#ganGVModal').modal('hide');
+                searchLHP();
+            })
+            .catch(err => alert("Lỗi: " + err.message));
+    }
+    // Gán trợ giảng
+    function ganGVTro() {
+        const maHP = document.getElementById("gvMaHP").value;
+        const maGVChinh = Number(document.getElementById("gvChinhSelect").value); // cần để gọi procedure
+        const maGVTro = Number(document.getElementById("gvTroSelect").value);
+
+        const maTGOld = document.getElementById("currentMaTG").value || null;
+
+        if (!maGVTro) {
+            alert("Chọn trợ giảng!");
+            return;
+        }
+
+        const params = new URLSearchParams();
+        params.append("maHP", maHP);
+        params.append("maGVChinh", maGVChinh);
+        params.append("maGVTroGiang", maGVTro);
+        if (maTGOld) {
+            params.append("maTGOld", maTGOld);
+        }
+
+        fetch("/api/giangDay/assignTG", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString()
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                $('#ganGVModal').modal('hide');
+                searchLHP();
+            })
+            .catch(err => alert("Lỗi: " + err.message));
+    }
+
+
+    // Submit form
+    document.getElementById("lopHocPhanForm").addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const maLHP = document.getElementById("maLHP").value;
+        const maHP = document.getElementById("maHPInput").value;
+        const maCTDT = document.getElementById("maCTDTInput").value;
+        const namHoc = document.getElementById("namHocInput").value;
+        const hocKy = document.getElementById("hocKyInput").value;
+        const siSo = document.getElementById("siSoInput").value;
+
+        if (maLHP) {
+            // update: chỉ gửi HocKy, NamHoc, SiSo
+            const params = new URLSearchParams({ maHP, maCTDT, namHoc, hocKy, siSo });
+
+            fetch(`/api/lopHocPhan/update/${maLHP}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: params.toString()
+            })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    $('#lopHocPhanModal').modal('hide');
+                    searchLHP();
+                })
+                .catch(err => alert("Lỗi: " + err.message));
+        } else {
+            // add: cần cả HP và CTDT
+            const params = new URLSearchParams({ maHP, maCTDT, namHoc, hocKy, siSo });
+
+            fetch("/api/lopHocPhan/add", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: params.toString()
+            })
+                .then(res => res.json())
+                .then(data => {
+                    alert("Thêm thành công! MaLHP = " + data.maLHP);
+                    $('#lopHocPhanModal').modal('hide');
+                    searchLHP();
+                })
+                .catch(err => alert("Lỗi: " + err.message));
+
+        }
+    });
+
+
+    // Xóa LHP
+    function deleteLHP(maLHP) {
+        if (confirm("Bạn có chắc muốn xóa Lớp học phần này?")) {
+            fetch(`/api/lopHocPhan/delete/${maLHP}`, { method: 'DELETE' })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                    searchLHP();
+                })
+                .catch(err => alert("Lỗi: " + err.message));
+        }
+    }
+
+    // load danh sách mặc định
+    window.onload = searchLHP;
+</script>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

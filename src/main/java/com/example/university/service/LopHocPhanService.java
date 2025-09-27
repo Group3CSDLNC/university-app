@@ -16,24 +16,36 @@ public class LopHocPhanService {
     @Autowired
     private LopHocPhanRepository repo;
 
-    public String add(int maHP, int hocKy, String namHoc, int maCTDT, int siSo) {
+    public Long add(Long maHP, int hocKy, String namHoc, Long maCTDT, int siSo) {
         return repo.addLopHocPhan(maHP, hocKy, namHoc, maCTDT, siSo);
     }
 
-    public void update(String maLHP, int hocKy, String namHoc, int siSo) {
-        repo.updateLopHocPhan(maLHP, hocKy, namHoc, siSo);
+    public void update(Long maLHP, Long maHP, Long maCTDT, int hocKy, String namHoc, int siSo) {
+        repo.updateLopHocPhan(maLHP, maHP, maCTDT, hocKy, namHoc, siSo);
     }
 
-    public void delete(String maLHP) {
+    public void delete(Long maLHP) {
         repo.deleteLopHocPhan(maLHP);
     }
 
-    public List<Map<String, Object>> list(Integer hocKy, String namHoc, Integer maCTDT, Integer maGV) {
+    public List<Map<String, Object>> list(Integer hocKy, String namHoc, Long maCTDT, Integer maGV) {
         return repo.getLopHocPhan(hocKy, namHoc, maCTDT, maGV);
+    }
+
+    public List<Map<String, Object>> getLopHocPhan(
+            Integer hocKy, String namHoc, Long maCTDT, Integer maGV, Long maHP) {
+        if (namHoc != null && namHoc.trim().isEmpty()) {
+            namHoc = null;
+        }
+        return repo.getLopHocPhanV2(hocKy, namHoc, maCTDT, maGV, maHP);
     }
 
     public List<LopHocPhanDTO> getAvailableLopHocPhan(Long maSV, String namHoc, int hocKy, Long maCN) {
         return repo.getLopHocPhanBySV(maSV, namHoc, hocKy, maCN);
+    }
+
+    public void assignGiangVien(Long maLHP, Long maHP, Integer maGVChinh, Integer soTietPhanCong, Integer maGVTroGiang) {
+        repo.assignGiangVien(maLHP, maHP, maGVChinh, soTietPhanCong, maGVTroGiang);
     }
 
 }

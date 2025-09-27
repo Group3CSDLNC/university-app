@@ -16,6 +16,8 @@ public class NhanVienService {
 
     public List<NhanVien> getAll() { return repo.findAll(); }
 
+    public List<NhanVien> findByVaiTro(List<String> vaiTros) { return repo.findByVaiTro(vaiTros); }
+
     public NhanVien getById(int maNV) { return repo.findById(maNV); }
 
     public void add(NhanVien nv) { repo.add(nv); }
@@ -26,5 +28,12 @@ public class NhanVienService {
 
     public List<LuongGVDTO> danhSachLuongGV(int thang, int nam) {
         return repo.danhSachLuongGV(thang, nam);
+    }
+    public List<NhanVien> getGiangVienChinhByLHP(Long maLHP) {
+        return repo.getGiangVienChinhByLHP(maLHP);
+    }
+
+    public List<NhanVien> getTroGiangByLHP(Long maLHP) {
+        return repo.getTroGiangByLHP(maLHP);
     }
 }

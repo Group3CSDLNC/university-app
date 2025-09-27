@@ -9,5 +9,14 @@ public class GiangDayService {
 
     @Autowired
     private GiangDayRepository repo;
+    // Assign cả giảng viên chính + trợ giảng
+    public void assignGiangVien(Long maLHP, Integer maGVOld, Integer maGV, Integer soTietPhanCong) {
+        repo.assignGiangVien(maLHP, maGVOld, maGV, soTietPhanCong);
+    }
+
+    public void assignTroGiangHP(Long maHP, Integer maGVChinh, Integer maTGOld, Integer maGVTroGiang) {
+        repo.assignTroGiangHP(maHP, maGVChinh, maTGOld, maGVTroGiang);
+    }
+
 
 }

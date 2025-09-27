@@ -13,24 +13,37 @@ public class LopHocPhanRepository {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public String addLopHocPhan(int maHP, int hocKy, String namHoc, int maCTDT, int siSo) {
+    public Long addLopHocPhan(Long maHP, int hocKy, String namHoc, Long maCTDT, int siSo) {
         String sql = "EXEC sp_AddLopHocPhan @MaHP=?, @HocKy=?, @NamHoc=?, @MaCTDT=?, @SiSo=?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{maHP, hocKy, namHoc, maCTDT, siSo}, String.class);
+        return jdbcTemplate.queryForObject(
+                sql,
+                new Object[]{maHP, hocKy, namHoc, maCTDT, siSo},
+                Long.class
+        );
     }
 
-    public void updateLopHocPhan(String maLHP, int hocKy, String namHoc, int siSo) {
-        String sql = "EXEC sp_UpdateLopHocPhan @MaLHP=?, @HocKy=?, @NamHoc=?, @SiSo=?";
-        jdbcTemplate.update(sql, maLHP, hocKy, namHoc, siSo);
+
+    public void updateLopHocPhan(Long maLHP, Long maHP, Long maCTDT, int hocKy, String namHoc, int siSo) {
+        String sql = "EXEC sp_UpdateLopHocPhanV2 @MaLHP=?, @maHP=?, @maCTDT=?, @HocKy=?, @NamHoc=?, @SiSo=?";
+        jdbcTemplate.update(sql, maLHP, maHP, maCTDT, hocKy, namHoc, siSo);
     }
 
-    public void deleteLopHocPhan(String maLHP) {
+    public void deleteLopHocPhan(Long maLHP) {
         String sql = "EXEC sp_DeleteLopHocPhan @MaLHP=?";
         jdbcTemplate.update(sql, maLHP);
     }
 
-    public List<Map<String, Object>> getLopHocPhan(Integer hocKy, String namHoc, Integer maCTDT, Integer maGV) {
+    public List<Map<String, Object>> getLopHocPhan(Integer hocKy, String namHoc, Long maCTDT, Integer maGV) {
         String sql = "EXEC sp_GetLopHocPhan @HocKy=?, @NamHoc=?, @MaCTDT=?, @MaGV=?";
         return jdbcTemplate.queryForList(sql, hocKy, namHoc, maCTDT, maGV);
+    }
+
+    public List<Map<String, Object>> getLopHocPhanV2(
+            Integer hocKy, String namHoc, Long maCTDT, Integer maGV, Long maHP) {
+
+        String sql = "EXEC sp_GetLopHocPhanV2 @HocKy = ?, @NamHoc = ?, @MaCTDT = ?, @MaGV = ?, @MaHP = ?";
+
+        return jdbcTemplate.queryForList(sql, hocKy, namHoc, maCTDT, maGV, maHP);
     }
     public List<LopHocPhanDTO> getLopHocPhanBySV(Long maSV, String namHoc, int hocKy, Long maCN) {
         String sql = "EXEC sp_GetLopHocPhanBySV @MaSV=?, @NamHoc=?, @HocKy=?, @MaCN=?";
@@ -63,5 +76,9 @@ public class LopHocPhanRepository {
                     return dto;
                 }
         );
+    }
+    public void assignGiangVien(Long maLHP, Long maHP, Integer maGVChinh, Integer soTietPhanCong, Integer maGVTroGiang) {
+        String sql = "EXEC sp_AssignGiangVien @MaLHP=?, @MaHP=?, @MaGVChinh=?, @SoTietPhanCong=?, @MaGVTroGiang=?";
+        jdbcTemplate.update(sql, maLHP, maHP, maGVChinh, soTietPhanCong, maGVTroGiang);
     }
 }

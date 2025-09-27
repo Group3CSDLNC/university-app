@@ -133,3 +133,82 @@ BEGIN
     ORDER BY lhp.MaLHP;
 END;
 GO
+
+CREATE OR ALTER PROCEDURE sp_GetLopHocPhanV2
+    @HocKy INT = NULL,
+    @NamHoc VARCHAR(9) = NULL,
+    @MaCTDT BIGINT = NULL,
+    @MaGV INT = NULL,
+    @MaHP BIGINT = NULL
+AS
+BEGIN
+    SELECT
+        lhp.MaLHP,
+        hp.MaHP,
+        hp.TenHP,
+        hp.SoTinChi,
+        lhp.HocKy,
+        lhp.NamHoc,
+        lhp.SiSo,
+        ctdt.MaCTDT,
+        ctdt.TenCTDT,
+        cn.TenCN,
+        k.TenKhoa,
+        gv.MaNV AS MaGiangVien,
+        gv.HoTen AS TenGiangVien,
+        gd.SoTietPhanCong,
+        tg.MaNV AS MaTroGiang,
+        tg.HoTen AS TenTroGiang
+    FROM LopHocPhan lhp
+    JOIN HocPhan hp ON lhp.MaHP = hp.MaHP
+    JOIN ChuongTrinhDaoTao ctdt ON hp.MaCTDT = ctdt.MaCTDT
+    JOIN ChuyenNganh cn ON ctdt.MaCN = cn.MaCN
+    JOIN Khoa k ON cn.MaKhoa = k.MaKhoa
+    LEFT JOIN GiangDay gd ON lhp.MaLHP = gd.MaLHP
+    LEFT JOIN NhanVien gv ON gd.MaGV = gv.MaNV
+    LEFT JOIN GiangVien_TroGiang gvtg ON gvtg.MaHP = hp.MaHP AND gvtg.MaGV_Chinh = gv.MaNV
+    LEFT JOIN NhanVien tg ON gvtg.MaGV_TroGiang = tg.MaNV
+    WHERE (@HocKy IS NULL OR lhp.HocKy = @HocKy)
+      AND (@NamHoc IS NULL OR lhp.NamHoc = @NamHoc)
+      AND (@MaCTDT IS NULL OR hp.MaCTDT = @MaCTDT)
+      AND (@MaGV IS NULL OR gd.MaGV = @MaGV)
+      AND (@MaHP IS NULL OR hp.MaHP = @MaHP);
+END;
+GO
+
+CREATE OR ALTER PROCEDURE sp_GetGiangVienChinhByLHP
+    @MaLHP BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        gv.MaGV AS MaNV,
+        nv.HoTen,
+        nv.HocVi,
+        'Giang vien' AS VaiTro,
+        nv.Email
+    FROM GiangDay gv
+    JOIN NhanVien nv ON gv.MaGV = nv.MaNV
+    WHERE gv.MaLHP = @MaLHP;
+END
+GO
+
+CREATE OR ALTER PROCEDURE sp_GetTroGiangByLHP
+    @MaLHP BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        tg.MaGV_TroGiang AS MaNV,
+        nv.HoTen,
+        nv.HocVi,
+        'Tro giang' AS VaiTro,
+        nv.Email
+    FROM GiangVien_TroGiang tg
+    JOIN NhanVien nv ON tg.MaGV_TroGiang = nv.MaNV
+    JOIN LopHocPhan lhp ON tg.MaHP = lhp.MaHP
+    WHERE lhp.MaLHP = @MaLHP;
+END
+GO
