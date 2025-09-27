@@ -24,41 +24,41 @@
             <li class="nav-item">
                 <a class="nav-link" href="/dashboard/admin">Dashboard</a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item" th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}">
                 <a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item" th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}">
                 <a class="nav-link" href="/khoa/list">Khoa</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link active" href="/hocPhan/hocphan_list">Học phần</a>
             </li>
-            <li class="nav-item">
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
                 <a class="nav-link" href="/lopHocPhan/lopHocPhan_list">Lớp Học phần</a>
             </li>
-            <li class="nav-item">
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}" class="nav-item">
                 <a class="nav-link" href="/hoc-vien/list">Học viên</a>
             </li>
-            <li class="nav-item">
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
                 <a class="nav-link" href="/nhan-vien/list">Nhân viên</a>
             </li>
-            <li class="nav-item">
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
                 <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
             </li>
-            <li class="nav-item">
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
                 <a class="nav-link" href="/phong-hoc/list">Phòng học</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
             </li>
-            <li class="nav-item">
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'NhanVien')}" class="nav-item">
                 <a class="nav-link" href="/luong/list">Lương</a>
             </li>
         </ul>
         <ul class="navbar-nav">
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
-                    <span th:text="${session.userName} ?: 'Admin'"></span>
+                    <span th:text="${sessionService.getCurrentUser().getLoaiTaiKhoan()} ?: 'Admin'"></span>
                 </a>
                 <div class="dropdown-menu dropdown-menu-right">
                     <a class="dropdown-item" href="/profile">Hồ sơ</a>
@@ -76,7 +76,7 @@
     <div class="search-add-group mb-3">
         <input type="text" id="keyword" class="form-control search-input" placeholder="Tìm kiếm theo tên học phần">
         <button class="btn btn-outline-secondary" onclick="searchHP()">Tìm</button>
-        <button class="btn btn-success" data-toggle="modal" data-target="#hocphanModal" onclick="openAddModal()">Thêm Học phần</button>
+        <button th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}" class="btn btn-success" data-toggle="modal" data-target="#hocphanModal" onclick="openAddModal()">Thêm Học phần</button>
     </div>
 
     <div id="loading" class="loading">Đang tải...</div>
@@ -106,7 +106,7 @@
             <td>
                 <span th:text="${hp.tienQuyet != null ? hocphanMap[hp.tienQuyet] : ''}"></span>
             </td>
-            <td>
+            <td th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}">
                 <button class="btn btn-sm btn-primary btnEdit" th:data-id="${hp.maHP}">Sửa</button>
                 <button class="btn btn-sm btn-danger btnDelete" th:data-id="${hp.maHP}">Xóa</button>
             </td>

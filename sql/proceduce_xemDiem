@@ -1,0 +1,293 @@
+CREATE OR ALTER PROCEDURE sp_XemKetQuaHocTap
+    @MaSV BIGINT = NULL,
+    @MaHP BIGINT = NULL,
+    @MaCTDT BIGINT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    ;WITH DiemThi AS (
+        SELECT
+            ct.MaSV,
+            hp.MaHP,
+            hp.TenHP,
+            hp.SoTinChi,
+            ct.LanThi,
+            ct.DiemCC,
+            ct.DiemGK,
+            ct.DiemCK,
+            CAST(ISNULL(ct.DiemCC,0)*0.1 + ISNULL(ct.DiemGK,0)*0.3 + ISNULL(ct.DiemCK,0)*0.6 AS DECIMAL(4,2)) AS DiemTong,
+            ROW_NUMBER() OVER (
+                PARTITION BY ct.MaSV, ct.MaHP
+                ORDER BY CAST(ISNULL(ct.DiemCC,0)*0.1 + ISNULL(ct.DiemGK,0)*0.3 + ISNULL(ct.DiemCK,0)*0.6 AS DECIMAL(4,2)) DESC
+            ) AS rn
+        FROM ChiTietDiem ct
+        INNER JOIN HocPhan hp ON ct.MaHP = hp.MaHP
+        WHERE (@MaSV IS NULL OR ct.MaSV = @MaSV)
+          AND (@MaHP IS NULL OR hp.MaHP = @MaHP)
+          AND (@MaCTDT IS NULL OR hp.MaCTDT = @MaCTDT)
+    )
+    SELECT
+        d.MaSV,
+        sv.HoTen AS TenSinhVien,
+        d.MaHP,
+        d.TenHP,
+        d.SoTinChi,
+        d.LanThi,
+        d.DiemCC,
+        d.DiemGK,
+        d.DiemCK,
+        d.DiemTong,
+        CASE
+            WHEN d.DiemTong >= 9.0 THEN N'Xuất sắc'
+            WHEN d.DiemTong >= 8.0 THEN N'Giỏi'
+            WHEN d.DiemTong >= 7.0 THEN N'Khá'
+            WHEN d.DiemTong >= 5.0 THEN N'Trung bình'
+            WHEN d.DiemTong >= 4.0 THEN N'Yếu'
+            ELSE N'Kém'
+        END AS XepLoai,
+        CASE WHEN d.DiemTong >= 5.0 THEN 1 ELSE 0 END AS QuaMon
+    FROM DiemThi d
+    INNER JOIN SinhVien sv ON d.MaSV = sv.MaSV
+    WHERE rn = 1
+    ORDER BY d.MaSV, d.MaHP;
+END
+GO
+
+CREATE OR ALTER PROCEDURE sp_XemKetQuaHocTap_v2
+    @MaSV BIGINT = NULL,
+    @MaHP BIGINT = NULL,
+    @MaCN BIGINT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    ;WITH DiemThi AS (
+        SELECT
+            ct.MaSV,
+            sv.HoTen AS TenSinhVien,
+            hp.MaHP,
+            hp.TenHP,
+            hp.SoTinChi,
+            lhp.HocKy,
+            lhp.NamHoc,
+            ct.LanThi,
+            ct.DiemCC,
+            ct.DiemGK,
+            ct.DiemCK,
+            CAST(ISNULL(ct.DiemCC,0)*0.1 + ISNULL(ct.DiemGK,0)*0.3 + ISNULL(ct.DiemCK,0)*0.6 AS DECIMAL(4,2)) AS DiemTong
+        FROM ChiTietDiem ct
+        INNER JOIN HocPhan hp ON ct.MaHP = hp.MaHP
+        INNER JOIN SinhVien sv ON ct.MaSV = sv.MaSV
+        LEFT JOIN DangKy dk ON dk.MaSV = ct.MaSV AND dk.MaLHP IN (
+            SELECT MaLHP FROM LopHocPhan WHERE MaHP = ct.MaHP
+        )
+        LEFT JOIN LopHocPhan lhp ON dk.MaLHP = lhp.MaLHP
+        WHERE (@MaSV IS NULL OR ct.MaSV = @MaSV)
+          AND (@MaHP IS NULL OR hp.MaHP = @MaHP)
+          AND (@MaCN IS NULL OR sv.MaCN = @MaCN)
+    )
+    SELECT
+        d.MaSV,
+        d.TenSinhVien,
+        d.MaHP,
+        d.TenHP,
+        d.SoTinChi,
+        d.HocKy,
+        d.NamHoc,
+        d.LanThi,
+        d.DiemCC,
+        d.DiemGK,
+        d.DiemCK,
+        d.DiemTong,
+        CASE
+            WHEN d.DiemTong >= 9.0 THEN N'Xuất sắc'
+            WHEN d.DiemTong >= 8.0 THEN N'Giỏi'
+            WHEN d.DiemTong >= 7.0 THEN N'Khá'
+            WHEN d.DiemTong >= 5.0 THEN N'Trung bình'
+            WHEN d.DiemTong >= 4.0 THEN N'Yếu'
+            ELSE N'Kém'
+        END AS XepLoai,
+        CASE WHEN d.DiemTong >= 5.0 THEN 1 ELSE 0 END AS QuaMon
+    FROM DiemThi d
+    ORDER BY d.MaSV, d.MaHP, d.NamHoc, d.HocKy, d.LanThi;
+END
+GO
+
+
+
+CREATE OR ALTER PROCEDURE sp_TinhKetQuaHocTapTongKet
+    @MaSV BIGINT = NULL,
+    @MaHP BIGINT = NULL,
+    @MaCTDT BIGINT = NULL,
+    @MaCN BIGINT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    ;WITH DiemCuoi AS (
+        SELECT
+            ct.MaSV,
+            hp.MaHP,
+            hp.SoTinChi,
+            hp.MaCTDT,
+            CAST(
+                ISNULL(ct.DiemCC,0)*0.1 +
+                ISNULL(ct.DiemGK,0)*0.3 +
+                ISNULL(ct.DiemCK,0)*0.6
+                AS DECIMAL(4,2)
+            ) AS DiemTong,
+            ROW_NUMBER() OVER (
+                PARTITION BY ct.MaSV, ct.MaHP
+                ORDER BY CAST(
+                    ISNULL(ct.DiemCC,0)*0.1 +
+                    ISNULL(ct.DiemGK,0)*0.3 +
+                    ISNULL(ct.DiemCK,0)*0.6
+                    AS DECIMAL(4,2)
+                ) DESC
+            ) AS rn
+        FROM ChiTietDiem ct
+        INNER JOIN HocPhan hp ON ct.MaHP = hp.MaHP
+        INNER JOIN SinhVien sv ON ct.MaSV = sv.MaSV
+        WHERE (@MaSV IS NULL OR ct.MaSV = @MaSV)
+          AND (@MaHP IS NULL OR hp.MaHP = @MaHP)
+          AND (@MaCTDT IS NULL OR hp.MaCTDT = @MaCTDT)
+          AND (@MaCN IS NULL OR sv.MaCN = @MaCN)
+    )
+    SELECT
+        sv.MaSV,
+        sv.HoTen AS TenSinhVien,
+        cn.MaCN,
+        cn.TenCN AS TenChuyenNganh,
+        ctdt.MaCTDT,
+        ctdt.TenCTDT,
+        ctdt.TongTinChi AS TongTinChiYeuCau,
+        SUM(d.SoTinChi) AS TongTinChiTichLuy,
+        SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) AS GPA,
+        CASE
+            WHEN SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) >= 9.0 THEN N'Xuất sắc'
+            WHEN SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) >= 8.0 THEN N'Giỏi'
+            WHEN SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) >= 7.0 THEN N'Khá'
+            WHEN SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) >= 5.0 THEN N'Trung bình'
+            WHEN SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) >= 4.0 THEN N'Yếu'
+            ELSE N'Kém'
+        END AS XepLoaiChung,
+        CASE
+            WHEN SUM(d.SoTinChi) >= ctdt.TongTinChi THEN N'Đủ điều kiện tốt nghiệp'
+            ELSE N'Chưa đủ điều kiện'
+        END AS TrangThaiTotNghiep
+    FROM DiemCuoi d
+    INNER JOIN SinhVien sv ON d.MaSV = sv.MaSV
+    INNER JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
+    INNER JOIN ChuongTrinhDaoTao ctdt ON d.MaCTDT = ctdt.MaCTDT
+    WHERE rn = 1
+      AND d.DiemTong >= 5   -- chỉ tính môn đã qua
+    GROUP BY sv.MaSV, sv.HoTen, cn.MaCN, cn.TenCN, ctdt.MaCTDT, ctdt.TenCTDT, ctdt.TongTinChi
+    ORDER BY sv.MaSV;
+END
+GO
+
+CREATE OR ALTER PROCEDURE sp_TinhKetQuaHocTapTongKet_v2
+    @MaSV BIGINT = NULL,
+    @MaCN BIGINT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    ;WITH DiemCuoi AS (
+        SELECT
+            ct.MaSV,
+            hp.MaHP,
+            hp.SoTinChi,
+            hp.MaCTDT,
+            CAST(
+                ISNULL(ct.DiemCC,0)*0.1 +
+                ISNULL(ct.DiemGK,0)*0.3 +
+                ISNULL(ct.DiemCK,0)*0.6
+                AS DECIMAL(4,2)
+            ) AS DiemTong,
+            ROW_NUMBER() OVER (
+                PARTITION BY ct.MaSV, ct.MaHP
+                ORDER BY CAST(
+                    ISNULL(ct.DiemCC,0)*0.1 +
+                    ISNULL(ct.DiemGK,0)*0.3 +
+                    ISNULL(ct.DiemCK,0)*0.6
+                    AS DECIMAL(4,2)
+                ) DESC
+            ) AS rn
+        FROM ChiTietDiem ct
+        INNER JOIN HocPhan hp ON ct.MaHP = hp.MaHP
+        INNER JOIN SinhVien sv ON ct.MaSV = sv.MaSV
+        WHERE (@MaSV IS NULL OR ct.MaSV = @MaSV)
+          AND (@MaCN IS NULL OR sv.MaCN = @MaCN)
+    )
+    SELECT
+        sv.MaSV,
+        sv.HoTen AS TenSinhVien,
+        cn.MaCN,
+        cn.TenCN AS TenChuyenNganh,
+        ctdt.MaCTDT,
+        ctdt.TenCTDT,
+        ctdt.TongTinChi AS TongTinChiYeuCau,
+        SUM(d.SoTinChi) AS TongTinChiTichLuy,
+        SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) AS GPA,
+        CASE
+            WHEN SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) >= 9.0 THEN N'Xuất sắc'
+            WHEN SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) >= 8.0 THEN N'Giỏi'
+            WHEN SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) >= 7.0 THEN N'Khá'
+            WHEN SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) >= 5.0 THEN N'Trung bình'
+            WHEN SUM(d.SoTinChi * d.DiemTong) * 1.0 / NULLIF(SUM(d.SoTinChi),0) >= 4.0 THEN N'Yếu'
+            ELSE N'Kém'
+        END AS XepLoaiChung,
+        CASE
+            WHEN SUM(d.SoTinChi) >= ctdt.TongTinChi THEN N'Đủ điều kiện tốt nghiệp'
+            ELSE N'Chưa đủ điều kiện'
+        END AS TrangThaiTotNghiep
+    FROM DiemCuoi d
+    INNER JOIN SinhVien sv ON d.MaSV = sv.MaSV
+    INNER JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
+    INNER JOIN ChuongTrinhDaoTao ctdt ON d.MaCTDT = ctdt.MaCTDT
+    WHERE rn = 1
+      AND d.DiemTong >= 5   -- chỉ tính môn đã qua
+    GROUP BY sv.MaSV, sv.HoTen, cn.MaCN, cn.TenCN, ctdt.MaCTDT, ctdt.TenCTDT, ctdt.TongTinChi
+    ORDER BY sv.MaSV;
+END
+GO
+
+CREATE OR ALTER PROCEDURE sp_TinhKetQuaHocTapTongKet_v3
+    @MaSV INT = NULL,
+    @MaCN INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        sv.MaSV,
+        sv.HoTen AS TenSV,
+        cn.MaCN,
+        cn.TenCN,
+        MAX(ct.TongTinChi) AS TongTinChiYeuCau,
+        SUM(CASE WHEN kq.TongKet >= 5 THEN hp.SoTinChi ELSE 0 END) AS TongTinChiTichLuy,
+        ROUND(AVG(kq.TongKet), 2) AS DiemTB,
+        CASE
+            WHEN ROUND(AVG(kq.TongKet), 2) >= 8.5 THEN N'Xuất sắc'
+            WHEN ROUND(AVG(kq.TongKet), 2) >= 7.0 THEN N'Giỏi'
+            WHEN ROUND(AVG(kq.TongKet), 2) >= 5.5 THEN N'Khá'
+            WHEN ROUND(AVG(kq.TongKet), 2) >= 4.0 THEN N'Trung bình'
+            ELSE N'Yếu'
+        END AS XepLoaiChung,
+        CASE
+            WHEN SUM(CASE WHEN kq.TongKet >= 5 THEN hp.SoTinChi ELSE 0 END) >= MAX(ct.TongTinChi)
+                THEN N'Đủ điều kiện'
+            ELSE N'Chưa đủ điều kiện'
+        END AS TrangThai
+    FROM KetQuaTongKet kq
+    JOIN SinhVien sv ON kq.MaSV = sv.MaSV
+    JOIN HocPhan hp ON kq.MaHP = hp.MaHP
+    JOIN ChuongTrinhDaoTao ct ON sv.MaCN = ct.MaCN
+    JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
+    WHERE (@MaSV IS NULL OR sv.MaSV = @MaSV)
+      AND (@MaCN IS NULL OR cn.MaCN = @MaCN)
+    GROUP BY sv.MaSV, sv.HoTen, cn.MaCN, cn.TenCN;
+END;
+GO
