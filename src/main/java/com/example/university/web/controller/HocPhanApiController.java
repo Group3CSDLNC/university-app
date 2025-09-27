@@ -95,6 +95,11 @@ public class HocPhanApiController {
         }
     }
 
+    @GetMapping("/by-ctdt/{maCTDT}")
+    public List<HocPhan> getByCTDT(@PathVariable Long maCTDT) {
+        return hocPhanService.getByMaCTDT(maCTDT);
+    }
+
     @GetMapping("/search")
     public List<HocPhan> searchHocPhan(@RequestParam(required = false) String keyword) {
         return hocPhanService.searchHocPhan(keyword);

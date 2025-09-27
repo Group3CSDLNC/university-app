@@ -71,3 +71,14 @@ BEGIN
 
     DELETE FROM NhanVien WHERE MaNV = @MaNV;
 END;
+
+CREATE OR ALTER PROCEDURE sp_GetNhanVienByVaiTroList
+    @VaiTroList NVARCHAR(MAX)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT *
+    FROM NhanVien
+    WHERE ',' + @VaiTroList + ',' LIKE '%,' + VaiTro + ',%';
+END

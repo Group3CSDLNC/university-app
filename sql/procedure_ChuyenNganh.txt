@@ -1,0 +1,55 @@
+-- Thêm chuyên ngành
+CREATE OR ALTER PROCEDURE sp_InsertChuyenNganh
+    @TenCN NVARCHAR(100),
+    @MaKhoa INT
+AS
+BEGIN
+    INSERT INTO ChuyenNganh(TenCN, MaKhoa)
+    VALUES(@TenCN, @MaKhoa);
+
+    -- Trả về ID vừa thêm
+    SELECT SCOPE_IDENTITY() AS MaCN;
+END
+GO
+
+-- Cập nhật chuyên ngành
+CREATE OR ALTER PROCEDURE sp_UpdateChuyenNganh
+    @MaCN INT,
+    @TenCN NVARCHAR(100),
+    @MaKhoa INT
+AS
+BEGIN
+    UPDATE ChuyenNganh
+    SET TenCN = @TenCN,
+        MaKhoa = @MaKhoa
+    WHERE MaCN = @MaCN;
+END
+GO
+
+-- Xóa chuyên ngành
+CREATE OR ALTER PROCEDURE sp_DeleteChuyenNganh
+    @MaCN INT
+AS
+BEGIN
+    DELETE FROM ChuyenNganh WHERE MaCN = @MaCN;
+END
+GO
+
+-- Lấy tất cả chuyên ngành
+CREATE OR ALTER PROCEDURE sp_GetAllChuyenNganh
+AS
+BEGIN
+    SELECT MaCN, TenCN, MaKhoa FROM ChuyenNganh;
+END
+GO
+
+-- Lấy chuyên ngành theo ID
+CREATE OR ALTER PROCEDURE sp_GetChuyenNganhById
+    @MaCN INT
+AS
+BEGIN
+    SELECT MaCN, TenCN, MaKhoa
+    FROM ChuyenNganh
+    WHERE MaCN = @MaCN;
+END
+GO

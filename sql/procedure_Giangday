@@ -1,0 +1,47 @@
+CREATE OR ALTER PROCEDURE sp_AssignGiangVienLHP
+    @MaLHP BIGINT,
+    @MaGVOld INT,
+    @MaGV INT,
+    @SoTietPhanCong INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Chỉ xóa bản ghi giảng viên cũ nếu tồn tại
+    IF EXISTS (SELECT 1 FROM GiangDay WHERE MaLHP = @MaLHP AND MaGV = @MaGVOld)
+    BEGIN
+        DELETE FROM GiangDay
+        WHERE MaLHP = @MaLHP AND MaGV = @MaGVOld;
+    END
+
+    -- Chèn bản ghi mới
+    INSERT INTO GiangDay (MaGV, MaLHP, SoTietPhanCong)
+    VALUES (@MaGV, @MaLHP, @SoTietPhanCong);
+END;
+GO
+
+CREATE OR ALTER PROCEDURE sp_AssignTroGiangHP
+    @MaHP BIGINT,
+    @MaGVChinh INT,
+    @MaTGOld INT,          -- trợ giảng cũ
+    @MaGVTroGiang INT       -- trợ giảng mới
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Xóa bản ghi trợ giảng cũ nếu tồn tại
+    IF @MaTGOld IS NOT NULL AND EXISTS (
+        SELECT 1 FROM GiangVien_TroGiang
+        WHERE MaHP = @MaHP AND MaGV_Chinh = @MaGVChinh AND MaGV_TroGiang = @MaTGOld
+    )
+    BEGIN
+        DELETE FROM GiangVien_TroGiang
+        WHERE MaHP = @MaHP AND MaGV_Chinh = @MaGVChinh AND MaGV_TroGiang = @MaTGOld;
+    END
+
+    -- Chèn bản ghi mới
+    INSERT INTO GiangVien_TroGiang (MaGV_Chinh, MaGV_TroGiang, MaHP)
+    VALUES (@MaGVChinh, @MaGVTroGiang, @MaHP);
+END;
+GO
+
