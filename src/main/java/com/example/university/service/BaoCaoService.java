@@ -25,4 +25,9 @@ public class BaoCaoService {
         return repo.getBaoCaoSiSo();
     }
 
+    public List<Map<String,Object>> getLichTrung() {
+        return repo.getBaoCaoLichTrung();
+    }
+
+
 }

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Sinh viên</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .navbar-brand { font-weight: bold; }
+        .nav-link { color: #6c757d !important; }
+        .nav-link.active { color: #007bff !important; }
+        .dropdown-menu { min-width: 200px; }
+        .table th, .table td { vertical-align: middle; }
+    </style>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý trung tâm đào tạo</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/dashboard/admin">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/sinh-vien/list">Sinh viên</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/nhan-vien/list">Nhân viên</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                    <span th:text="${session.userName} ?: 'Admin'"></span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="/profile">Hồ sơ</a>
+                    <a class="dropdown-item" href="/logout">Đăng xuất</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2>Danh sách Sinh viên</h2>
+            <div class="mb-3">
+                <a href="/sinh-vien/list/add" class="btn btn-primary">+ Thêm Sinh viên</a>
+            </div>
+
+            <table class="table table-bordered table-striped">
+                <thead class="thead-dark">
+                <tr>
+                    <th>Mã SV</th>
+                    <th>Họ tên</th>
+                    <th>Ngày sinh</th>
+                    <th>Giới tính</th>
+                    <th>Email</th>
+                    <th>Chuyên ngành</th>
+                    <th>Năm học</th>
+                    <th>Hành động</th>
+                </tr>
+                </thead>
+                <tbody id="sinhVienTableBody">
+                <!-- load bằng JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadSinhVien() {
+        try {
+            const res = await fetch("/api/sinhVien");   // gọi Controller
+            const data = await res.json();
+
+            let tableBody = document.getElementById("sinhVienTableBody");
+            tableBody.innerHTML = "";
+
+            data.forEach(sv => {
+                let row = `
+                <tr>
+                    <td>${sv.maSV}</td>
+                    <td>${sv.hoTen}</td>
+                    <td>${sv.ngaySinh || ""}</td>
+                    <td>${sv.gioiTinh || ""}</td>
+                    <td>${sv.email}</td>
+                    <td>${sv.maCN || ""}</td>
+                    <td>${sv.namHoc}</td>
+                    <td>
+                        <a href="/sinh-vien/edit/${sv.maSV}" class="btn btn-sm btn-warning">Sửa</a>
+                        <button class="btn btn-sm btn-danger" onclick="deleteSinhVien(${sv.maSV})">Xóa</button>
+                    </td>
+                </tr>
+            `;
+                tableBody.innerHTML += row;
+            });
+        } catch (error) {
+            console.error("Lỗi tải dữ liệu:", error);
+        }
+    }
+
+    async function deleteSinhVien(id) {
+        if (confirm("Bạn có chắc muốn xóa sinh viên này?")) {
+            await fetch(`/api/sinhVien/${id}`, { method: "DELETE" });
+            loadSinhVien();
+        }
+    }
+
+    window.onload = loadSinhVien;
+</script>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+</body>
+</html>

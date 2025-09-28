@@ -28,4 +28,9 @@ public class BaoCaoRepository {
     public List<Map<String,Object>> getBaoCaoSiSo() {
         return jdbcTemplate.queryForList("EXEC sp_BaoCaoSiSoLop");
     }
+
+    public List<Map<String,Object>> getBaoCaoLichTrung() {
+        return jdbcTemplate.queryForList("EXEC sp_BaoCaoLichHocTrung");
+    }
+
 }
