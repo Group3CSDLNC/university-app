@@ -164,3 +164,23 @@ BEGIN
     DELETE FROM DangKy WHERE MaSV = @MaSV AND MaLHP = @MaLHP;
 END;
 GO
+
+CREATE OR ALTER PROCEDURE sp_GetAllSinhVien
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        MaSV,
+        HoTen,
+        NgaySinh,
+        GioiTinh,
+        DiaChi,
+        MaCN,
+        TinhTrang,
+        Email,
+        NamHoc
+    FROM SinhVien
+    ORDER BY HoTen;
+END
+GO

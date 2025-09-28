@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tinhKetQuaHocTapChiTiet</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .navbar-brand { font-weight: bold; }
+        .nav-link { color: #6c757d !important; }
+        .nav-link.active { color: #007bff !important; }
+        .dropdown-menu { min-width: 200px; }
+    </style>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý trung tâm đào tạo</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/dashboard/admin">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a>
+            </li>
+            <li class="nav-item" th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}">
+                <a class="nav-link" href="/khoa/list">Khoa</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/hocPhan/hocphan_list">Học phần</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/lopHocPhan/lopHocPhan_list">Lớp Học phần</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/hoc-vien/list">Học viên</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/nhan-vien/list">Nhân viên</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/phong-hoc/list">Phòng học</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link active" href="/diem-thi/list">Điểm thi</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'SinhVien'}" class="nav-item">
+                <a class="nav-link active" href="/diem-thi/chitiet">Điểm thi</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/luong/list">Lương</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                    <span th:text="${sessionService.getCurrentUser().getLoaiTaiKhoan()} ?: 'Admin'"></span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="/profile">Hồ sơ</a>
+                    <a class="dropdown-item" href="/logout">Đăng xuất</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+<div class="container mt-4">
+    <div class="d-flex align-items-center mb-3">
+        <div>
+            <h3 class="mb-0">Chi tiết điểm thi</h3>
+            <div class="small-muted">Lịch sử điểm — hiển thị theo từng kỳ học</div>
+        </div>
+
+        <div class="ml-auto" th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}">
+            <a th:href="@{/diem-thi/list}" class="btn btn-outline-secondary">Quay về danh sách</a>
+        </div>
+    </div>
+
+    <!-- Thông tin sinh viên -->
+    <div th:if="${firstRow != null}" class="mb-3">
+        <strong>Mã SV:</strong> <span th:text="${firstRow['MaSV']}"></span>
+        &nbsp;&nbsp; <strong>Họ tên:</strong> <span th:text="${firstRow['TenSinhVien']}"></span>
+        &nbsp;&nbsp; <strong>Số tín chỉ tích lũy:</strong> <span th:text="${firstRowAll['TongTinChiTichLuy']}"></span>
+        &nbsp;&nbsp; <strong>Điểm tích lũy:</strong> <span th:text="${#numbers.formatDecimal(firstRowAll['DiemTB'], 1, 2)}"></span>
+    </div>
+
+    <!-- Lặp từng nhóm kỳ học -->
+    <div th:each="entry : ${groupedTongKet}">
+        <h5 class="mt-4 mb-2" th:text="${entry.key}"></h5>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="thead-dark">
+                <tr>
+                    <th>Mã HP</th>
+                    <th>Tên học phần</th>
+                    <th>TC</th>
+                    <th>Lần thi</th>
+                    <th>Điểm CC</th>
+                    <th>Điểm GK</th>
+                    <th>Điểm CK</th>
+                    <th>Điểm tổng</th>
+                    <th>Xếp loại</th>
+                    <th>Qua môn</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${entry.value}">
+                    <td th:text="${row.MaHP}"></td>
+                    <td th:text="${row.TenHP}"></td>
+                    <td th:text="${row.SoTinChi}"></td>
+                    <td th:text="${row.LanThi}"></td>
+                    <td th:text="${#numbers.formatDecimal(row.DiemCC,1,1)}"></td>
+                    <td th:text="${#numbers.formatDecimal(row.DiemGK,1,1)}"></td>
+                    <td th:text="${#numbers.formatDecimal(row.DiemCK,1,1)}"></td>
+                    <td th:text="${#numbers.formatDecimal(row.DiemTong,1,2)}"></td>
+                    <td th:text="${row.XepLoai}"></td>
+                    <td th:text="${row.QuaMon == 1 ? 'Có' : 'Không'}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Nếu muốn xử lý click row ở JS (ví dụ đi chi tiết theo maSV/maHP/năm/kỳ) -->
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    $(function(){
+        // highlight on hover
+        $('table.table tbody tr.clickable-row').hover(
+            function(){ $(this).addClass('table-active'); },
+            function(){ $(this).removeClass('table-active'); }
+        );
+        // nếu muốn: click 1 hàng chuyển chi tiết học phần (vd truyền maSV & maHP & namHoc & hocKy)
+        $('table.table tbody').on('click', 'tr.clickable-row', function () {
+            // nếu bạn muốn override the inline th:onclick, có thể build url here:
+            // const maSV = $(this).find('td').eq(0).text().trim();
+            // const maHP = $(this).find('td').eq(2).text().trim();
+            // const namHoc = $(this).find('td').eq(5).text().trim();
+            // const hocKy = $(this).find('td').eq(6).text().trim();
+            // window.location.href = `/diem-thi/chitiet?maSV=${maSV}&maHP=${maHP}&namHoc=${encodeURIComponent(namHoc)}&hocKy=${hocKy}`;
+        });
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

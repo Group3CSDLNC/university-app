@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KetQuaHocTapTongKet</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .navbar-brand { font-weight: bold; }
+        .nav-link { color: #6c757d !important; }
+        .nav-link.active { color: #007bff !important; }
+        .dropdown-menu { min-width: 200px; }
+    </style>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý trung tâm đào tạo</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/dashboard/admin">Dashboard</a>
+            </li>
+            <li class="nav-item" th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}">
+                <a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a>
+            </li>
+            <li class="nav-item" th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}">
+                <a class="nav-link" href="/khoa/list">Khoa</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/hocPhan/hocphan_list">Học phần</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/lopHocPhan/lopHocPhan_list">Lớp Học phần</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}" class="nav-item">
+                <a class="nav-link" href="/hoc-vien/list">Học viên</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/nhan-vien/list">Nhân viên</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/phong-hoc/list">Phòng học</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'SinhVien')}" class="nav-item">
+                <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'NhanVien')}" class="nav-item">
+                <a class="nav-link" href="/luong/list">Lương</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                    <span th:text="${sessionService.getCurrentUser().getLoaiTaiKhoan()} ?: 'Admin'"></span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="/profile">Hồ sơ</a>
+                    <a class="dropdown-item" href="/logout">Đăng xuất</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2>Kết quả tổng kết học tập</h2>
+
+    <!-- Filter -->
+    <div class="search-add-group mb-3 d-flex align-items-center">
+        <select id="maCNFilter" class="form-control mr-2">
+            <option value="">-- Tất cả CN --</option>
+            <option th:each="cn : ${chuyenNganhs}"
+                    th:value="${cn.maCN}"
+                    th:text="${cn.tenCN}"></option>
+        </select>
+
+        <select id="maSVFilter" class="form-control mr-2">
+            <option value="">-- Tất cả Sinh viên --</option>
+            <option th:each="sv : ${sinhViens}"
+                    th:value="${sv.maSV}"
+                    th:text="${sv.hoTen}"></option>
+        </select>
+        <div class="ml-auto d-flex">
+            <button class="btn btn-outline-secondary mr-2" onclick="searchTongKet()">Lọc</button>
+        </div>
+    </div>
+
+    <div id="loading" style="display:none;">Đang tải...</div>
+
+    <!-- Table -->
+    <table class="table table-bordered table-hover">
+        <thead class="thead-dark">
+        <tr>
+            <th>Mã SV</th>
+            <th>Tên sinh viên</th>
+            <th>Chuyên ngành</th>
+            <th>Tổng tín chỉ yêu cầu</th>
+            <th>Tổng tín chỉ tích lũy</th>
+            <th>GPA</th>
+            <th>Xếp loại</th>
+            <th>Trạng thái tốt nghiệp</th>
+        </tr>
+        </thead>
+        <tbody id="tongKetTableBody"></tbody>
+    </table>
+</div>
+
+<script th:inline="javascript">
+    const loading = document.getElementById("loading");
+    const tbody = document.getElementById("tongKetTableBody");
+
+    function searchTongKet() {
+        const params = new URLSearchParams({
+            maSV: document.getElementById("maSVFilter").value,
+            maCN: document.getElementById("maCNFilter").value
+        });
+
+        loading.style.display = "block";
+        fetch(`/api/taiKhoan/tongket?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                tbody.innerHTML = "";
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="9" class="text-center">Không có dữ liệu</td></tr>`;
+                    return;
+                }
+
+                data.forEach(row => {
+                    const tr = document.createElement("tr");
+
+                    // gán sự kiện click cho từng dòng
+                    tr.style.cursor = "pointer"; // đổi chuột để nhìn trực quan hơn
+                    tr.onclick = () => {
+                        window.location.href = `/diem-thi/chitiet?maSV=${row["MaSV"]}`;
+                    };
+
+                    ["MaSV","TenSV","TenCN","TongTinChiYeuCau",
+                        "TongTinChiTichLuy","DiemTB","XepLoaiChung","TrangThai"].forEach(key => {
+                        const td = document.createElement("td");
+
+                        if (key === "DiemTB" && row[key] != null) {
+                            td.textContent = parseFloat(row[key]).toFixed(2);
+                        } else {
+                            td.textContent = row[key] ?? "";
+                        }
+
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+
+            })
+            .catch(err => alert("Lỗi: " + err.message))
+            .finally(() => loading.style.display = "none");
+    }
+
+    // load mặc định khi vào trang
+    window.onload = searchTongKet;
+</script>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+
