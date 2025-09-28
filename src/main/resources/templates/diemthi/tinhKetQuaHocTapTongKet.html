@@ -123,7 +123,7 @@
         });
 
         loading.style.display = "block";
-        fetch(`/api/taiKhoan/tongket?${params.toString()}`)
+        fetch(`/api/ketQua/tongket?${params.toString()}`)
             .then(res => res.json())
             .then(data => {
                 tbody.innerHTML = "";
