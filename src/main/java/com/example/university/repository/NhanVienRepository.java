@@ -9,6 +9,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Repository
@@ -89,6 +90,11 @@ public class NhanVienRepository {
                     dto.setLuong(rs.getBigDecimal("Luong"));
                     return dto;
                 });
+    }
+
+    public List<Map<String, Object>> tinhLuong(Integer maNV, int thang, int nam) {
+        String sql = "EXEC sp_TinhLuong_v2 @MaNV=?, @Thang=?, @Nam=?";
+        return jdbcTemplate.queryForList(sql, maNV, thang, nam);
     }
 
     // Giảng viên chính

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng lương nhân viên</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .navbar-brand { font-weight: bold; }
+        .nav-link { color: #6c757d !important; }
+        .nav-link.active { color: #007bff !important; }
+        .dropdown-menu { min-width: 200px; }
+    </style>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý trung tâm đào tạo</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin')}" class="nav-item">
+                <a class="nav-link" href="/dashboard/admin">Dashboard</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'NhanVien')}" class="nav-item">
+                <a class="nav-link" href="/dashboard/nhanvien">Dashboard</a>
+            </li>
+            <li class="nav-item" th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}">
+                <a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a>
+            </li>
+            <li class="nav-item" th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}">
+                <a class="nav-link" href="/khoa/list">Khoa</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/hocPhan/hocphan_list">Học phần</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/lopHocPhan/lopHocPhan_list">Lớp Học phần</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}" class="nav-item">
+                <a class="nav-link" href="/hoc-vien/list">Học viên</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/nhan-vien/list">Nhân viên</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
+            </li>
+            <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
+                <a class="nav-link" href="/phong-hoc/list">Phòng học</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'SinhVien')}" class="nav-item">
+                <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'NhanVien')}" class="nav-item">
+                <a class="nav-link  active" href="/luong/list">Lương</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                    <span th:text="${sessionService.getCurrentUser().getLoaiTaiKhoan()} ?: 'Admin'"></span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="/profile">Hồ sơ</a>
+                    <a class="dropdown-item" href="/logout">Đăng xuất</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2 class="mb-3">Bảng lương nhân viên</h2>
+
+    <!-- Form lọc theo nhân viên/tháng/năm -->
+    <form class="form-inline mb-3" method="get" th:action="@{/luong/list}">
+        <!-- Dropdown nhân viên -->
+        <div th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin')}" class="form-group mr-2">
+            <label for="maNV" class="mr-2">Nhân viên</label>
+            <select class="form-control" id="maNV" name="maNV">
+                <option value="" th:text="'Tất cả'" th:selected="${selectedMaNV == null}"></option>
+                <option th:each="nv : ${nhanViens}"
+                        th:value="${nv.maNV}"
+                        th:text="${nv.hoTen + ' (' + nv.maNV + ')'}"
+                        th:selected="${nv.maNV == selectedMaNV}">
+                </option>
+            </select>
+        </div>
+        <!-- Dropdown tháng -->
+        <div class="form-group mr-2">
+            <label for="thang" class="mr-2">Tháng</label>
+            <select class="form-control" id="thang" name="thang" required>
+                <option th:each="m : ${monthMap}"
+                        th:value="${m.key}"
+                        th:text="${m.value}"
+                        th:selected="${m.key == selectedThang}">
+                </option>
+            </select>
+        </div>
+
+        <!-- Dropdown năm -->
+        <div class="form-group mr-2">
+            <label for="nam" class="mr-2">Năm</label>
+            <select class="form-control" id="nam" name="nam" required>
+                <option th:each="y : ${yearMap}"
+                        th:value="${y.key}"
+                        th:text="${y.value}"
+                        th:selected="${y.key == selectedNam}">
+                </option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Xem lương</button>
+    </form>
+
+    <!-- Bảng lương -->
+    <table class="table table-bordered table-hover">
+        <thead class="thead-light">
+        <tr>
+            <th>Mã NV</th>
+            <th>Hộ tên</th>
+            <th>Vai trò</th>
+            <th>Tổng số giờ dạy</th>
+            <th>Hệ số</th>
+            <th>Số SV quản lý</th>
+            <th>Số nhân viên dưới quyền</th>
+            <th>Tổng lương</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="nv : ${listLuong}">
+            <td th:text="${nv.MaNV}"></td>
+            <td th:text="${nv.HoTen}"></td>
+            <td th:text="${nv.VaiTro}"></td>
+            <td th:text="${nv.TongGio}"></td>
+            <td th:text="${nv.HeSo}"></td>
+            <td th:text="${nv.SoSV}"></td>
+            <td th:text="${nv.SoNhanVienDuoiQuyen}"></td>
+            <td th:text="${#numbers.formatDecimal(nv.Luong,1,'COMMA',0,'POINT')}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.bundle.min.js"></script>
+

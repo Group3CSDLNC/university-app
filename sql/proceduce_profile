@@ -1,0 +1,32 @@
+CREATE OR ALTER PROCEDURE sp_GetTaiKhoanById
+@MaTK INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        tk.MaTK,
+        tk.TenDangNhap,
+        tk.LoaiTaiKhoan,
+
+        -- Thông tin sinh viên
+        tk.MaSV,
+        sv.HoTen AS TenSinhVien,
+        sv.Email AS EmailSinhVien,
+        sv.NgaySinh,
+        sv.GioiTinh,
+        cn.TenCN AS ChuyenNganh,
+
+        -- Thông tin nhân viên
+        tk.MaNV,
+        nv.HoTen AS TenNhanVien,
+        nv.Email AS EmailNhanVien,
+        nv.HocVi,
+        nv.VaiTro
+    FROM TaiKhoan tk
+             LEFT JOIN SinhVien sv ON tk.MaSV = sv.MaSV
+             LEFT JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
+             LEFT JOIN NhanVien nv ON tk.MaNV = nv.MaNV
+    WHERE tk.MaTK = @MaTK;
+END;
+GO

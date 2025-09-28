@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Hồ sơ cá nhân</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-6">
+<div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-4">Hồ sơ cá nhân</h1>
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <p><strong>Mã tài khoản:</strong> <span th:text="${taiKhoan.maTK}"></span></p>
+            <p><strong>Tên đăng nhập:</strong> <span th:text="${taiKhoan.tenDangNhap}"></span></p>
+            <p><strong>Loại tài khoản:</strong> <span th:text="${taiKhoan.loaiTaiKhoan}"></span></p>
+        </div>
+        <div th:if="${taiKhoan.maSV != null}">
+            <h2 class="text-xl font-semibold mt-4">Thông tin sinh viên</h2>
+            <p><strong>Mã sinh viên:</strong> <span th:text="${taiKhoan.maSV}"></span></p>
+            <p><strong>Họ tên:</strong> <span th:text="${taiKhoan.tenSinhVien}"></span></p>
+            <p><strong>Email:</strong> <span th:text="${taiKhoan.emailSinhVien}"></span></p>
+            <p><strong>Ngày sinh:</strong> <span th:text="${taiKhoan.ngaySinh}"></span></p>
+            <p><strong>Giới tính:</strong> <span th:text="${taiKhoan.gioiTinh == 'M' ? 'Nam' : 'Nữ'}"></span></p>
+            <p><strong>Chuyên ngành:</strong> <span th:text="${taiKhoan.chuyenNganh}"></span></p>
+        </div>
+        <div th:if="${taiKhoan.maNV != null}">
+            <h2 class="text-xl font-semibold mt-4">Thông tin nhân viên</h2>
+            <p><strong>Mã nhân viên:</strong> <span th:text="${taiKhoan.maNV}"></span></p>
+            <p><strong>Họ tên:</strong> <span th:text="${taiKhoan.tenNhanVien}"></span></p>
+            <p><strong>Email:</strong> <span th:text="${taiKhoan.emailNhanVien}"></span></p>
+            <p><strong>Học vị:</strong> <span th:text="${taiKhoan.hocVi}"></span></p>
+            <p><strong>Vai trò:</strong> <span th:text="${taiKhoan.vaiTro}"></span></p>
+        </div>
+    </div>
+    <div th:with="role=${sessionService.currentUser != null ? sessionService.currentUser.loaiTaiKhoan : ''}">
+        <a href="/logout" class="mt-4 inline-block bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Đăng xuất</a>
+        <a th:if="${role == 'Admin'}" th:href="@{/dashboard/admin}" class="mt-4 ml-4 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Quay lại</a>
+        <a th:if="${role == 'NhanVien'}" th:href="@{/dashboard/nhanvien}" class="mt-4 ml-4 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Quay lại</a>
+        <a th:if="${role == 'SinhVien'}" th:href="@{/dashboard/sinhvien}" class="mt-4 ml-4 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Quay lại</a>
+        <a th:if="${role == 'QuanLy'}" th:href="@{/dashboard/quanly}" class="mt-4 ml-4 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Quay lại</a>
+        <a th:if="${role == ''}" th:href="@{/}" class="mt-4 ml-4 inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Quay lại</a>
+    </div>
+</div>
+</body>
+</html>

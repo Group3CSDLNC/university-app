@@ -63,3 +63,87 @@ BEGIN
     SELECT @MaNV AS MaNV, @Luong AS Luong;
 END;
 
+
+CREATE OR ALTER PROCEDURE sp_TinhLuong_v2
+    @MaNV INT = NULL,  -- NULL để tính cho tất cả
+    @Thang INT,
+    @Nam INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @WagePerHour DECIMAL(10,2) = 200000;
+    DECLARE @LuongCoDinh DECIMAL(18,2) = 5000000;
+    DECLARE @TienMoiSV DECIMAL(10,2) = 100000;
+
+    -- CTE nhân viên cần tính
+    WITH NV_CTE AS (
+        SELECT MaNV, HoTen, VaiTro
+        FROM NhanVien
+        WHERE @MaNV IS NULL OR MaNV = @MaNV
+    ),
+         -- Tính số giờ dạy cho giảng viên / trợ giảng
+         GiangVien_CTE AS (
+             SELECT
+                 nv.MaNV,
+                 SUM(ISNULL(gd.SoTietPhanCong,0))/2 *
+                 (CASE WHEN tg.MaGV_TroGiang IS NOT NULL THEN 0.5 ELSE 1 END) AS TongGio,
+                 CASE WHEN tg.MaGV_TroGiang IS NOT NULL THEN 0.5 ELSE 1 END AS HeSo
+             FROM NV_CTE nv
+                      LEFT JOIN GiangDay gd
+                                ON (gd.MaGV = nv.MaNV OR gd.MaLHP IN (
+                                    SELECT MaLHP FROM GiangVien_TroGiang WHERE MaGV_TroGiang = nv.MaNV
+                                ))
+                      LEFT JOIN GiangVien_TroGiang tg ON tg.MaGV_TroGiang = nv.MaNV
+                      LEFT JOIN LopHocPhan lhp ON lhp.MaLHP = gd.MaLHP
+                      LEFT JOIN LichHoc lh ON lh.MaLHP = lhp.MaLHP
+                 AND MONTH(lh.NgayBatDau) = @Thang
+                 AND YEAR(lh.NgayBatDau) = @Nam
+             WHERE nv.VaiTro IN ('Giang vien','Tro giang')
+             GROUP BY nv.MaNV, tg.MaGV_TroGiang
+         ),
+         -- Tính số sinh viên và nhân viên cấp dưới cho nhân viên quản lý
+         QuanLy_CTE AS (
+             SELECT
+                 nv.MaNV,
+                 ISNULL((
+                            SELECT SUM(svCount.SoLuong)
+                            FROM (
+                                     SELECT COUNT(sv.MaSV) AS SoLuong
+                                     FROM CTDT_NhanVien cnv
+                                              JOIN ChuongTrinhDaoTao ctdt ON cnv.MaCTDT = ctdt.MaCTDT
+                                              JOIN ChuyenNganh cn ON ctdt.MaCN = cn.MaCN
+                                              JOIN SinhVien sv ON sv.MaCN = cn.MaCN
+                                     WHERE cnv.MaNV = nv.MaNV
+                                     GROUP BY cnv.MaCTDT
+                                 ) svCount
+                        ),0) AS SoSV,
+                 ISNULL((
+                            SELECT COUNT(*)
+                            FROM NhanVien_QuanLy
+                            WHERE MaNV_QuanLy = nv.MaNV
+                        ),0) AS SoNhanVienDuoiQuyen
+             FROM NV_CTE nv
+             WHERE nv.VaiTro = 'Quan ly'
+         )
+    SELECT
+        nv.MaNV,
+        nv.HoTen,
+        nv.VaiTro,
+        ISNULL(gv.TongGio,0) AS TongGio,
+        ISNULL(gv.HeSo,1) AS HeSo,
+        ISNULL(ql.SoSV,0) AS SoSV,
+        ISNULL(ql.SoNhanVienDuoiQuyen,0) AS SoNhanVienDuoiQuyen,
+        CASE
+            WHEN nv.VaiTro IN ('Giang vien','Tro giang') THEN ISNULL(gv.TongGio * 2 * @WagePerHour * gv.HeSo,0)
+            ELSE @LuongCoDinh
+                + ISNULL(ql.SoSV * @TienMoiSV,0)
+                + ISNULL(ql.SoNhanVienDuoiQuyen * @LuongCoDinh * 0.05,0)
+            END AS Luong
+    FROM NV_CTE nv
+             LEFT JOIN GiangVien_CTE gv ON gv.MaNV = nv.MaNV
+             LEFT JOIN QuanLy_CTE ql ON ql.MaNV = nv.MaNV
+    ORDER BY nv.MaNV;
+END;
+GO
+

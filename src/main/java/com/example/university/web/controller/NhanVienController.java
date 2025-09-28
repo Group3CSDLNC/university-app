@@ -71,4 +71,5 @@ public class NhanVienController {
     public List<NhanVien> getTroGiangByLHP(@PathVariable Long maLHP) {
         return service.getTroGiangByLHP(maLHP);
     }
+
 }
