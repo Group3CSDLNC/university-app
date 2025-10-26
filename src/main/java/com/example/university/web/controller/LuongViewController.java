@@ -1,5 +1,6 @@
 package com.example.university.web.controller;
 
+import com.example.university.dto.NhanVienDTO;
 import com.example.university.model.NhanVien;
 import com.example.university.service.NhanVienService;
 import com.example.university.service.SessionService;
@@ -36,7 +37,7 @@ public class LuongViewController {
         }
 
         if (Objects.equals(sessionService.getCurrentUser().getLoaiTaiKhoan(), "NhanVien")) {
-            NhanVien nhanVien = nhanVienService.getById(sessionService.getCurrentUser().getMaNV());
+            NhanVienDTO nhanVien = nhanVienService.getById(sessionService.getCurrentUser().getMaNV());
             if (nhanVien != null) {
                 maNV = nhanVien.getMaNV();
             }
