@@ -1,36 +1,57 @@
-CREATE OR ALTER PROCEDURE sp_BangDiemSinhVien
-    @MaSV BIGINT,
-    @MaCTDT BIGINT
+CREATE OR ALTER PROCEDURE [dbo].[sp_BangDiemSinhVien]
+    @MaSV   BIGINT = NULL,
+    @MaCTDT BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT 
+    SELECT
         sv.MaSV,
         sv.HoTen,
-        hp.MaHP,
-        hp.TenHP,
+        ctdt.MaCTDT,
         ctdt.TenCTDT,
         ctdt.NamHoc,
-        ctDiem.LanThi,
-        ctDiem.DiemCC,
-        ctDiem.DiemGK,
-        ctDiem.DiemCK,
-        (ISNULL(ctDiem.DiemCC,0) * 0.1 + ISNULL(ctDiem.DiemGK,0) * 0.3 + ISNULL(ctDiem.DiemCK,0) * 0.6) AS TongKet,
-        CASE 
-            WHEN (ISNULL(ctDiem.DiemCC,0) * 0.1 + ISNULL(ctDiem.DiemGK,0) * 0.3 + ISNULL(ctDiem.DiemCK,0) * 0.6) >= 5 THEN 'Pass'
+        hp.MaHP,
+        hp.TenHP,
+        kq.TongKet,
+        kq.XepLoai,
+        ct.LanThi,
+        ct.DiemCC,
+        ct.DiemGK,
+        ct.DiemCK,
+        CASE
+            WHEN ct.DiemCC IS NOT NULL OR ct.DiemGK IS NOT NULL OR ct.DiemCK IS NOT NULL
+            THEN (ISNULL(ct.DiemCC,0) * 0.1 + ISNULL(ct.DiemGK,0) * 0.3 + ISNULL(ct.DiemCK,0) * 0.6)
+            ELSE NULL
+        END AS TongKet_TuChiTiet,
+        CASE
+            WHEN kq.TongKet >= 5 THEN 'Pass'
             ELSE 'Fail'
         END AS TrangThai
     FROM SinhVien sv
     JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
-    JOIN ChuongTrinhDaoTao ctdt ON cn.MaCN = ctdt.MaCN AND ctdt.MaCTDT = @MaCTDT
+    JOIN ChuongTrinhDaoTao ctdt ON ctdt.MaCN = cn.MaCN
     JOIN HocPhan hp ON hp.MaCTDT = ctdt.MaCTDT
-    LEFT JOIN ChiTietDiem ctDiem ON ctDiem.MaSV = sv.MaSV AND ctDiem.MaHP = hp.MaHP
-    WHERE sv.MaSV = @MaSV;
-END;
+    JOIN KetQuaTongKet kq ON kq.MaSV = sv.MaSV AND kq.MaHP = hp.MaHP
+    OUTER APPLY
+    (
+        SELECT TOP (1) cd.LanThi,
+                       cd.DiemCC,
+                       cd.DiemGK,
+                       cd.DiemCK
+        FROM ChiTietDiem cd
+        WHERE cd.MaSV = sv.MaSV
+          AND cd.MaHP = hp.MaHP
+        ORDER BY cd.LanThi DESC
+    ) ct
+    WHERE
+        (@MaSV IS NULL OR sv.MaSV = @MaSV)          -- lọc theo sinh viên nếu có
+        AND (@MaCTDT IS NULL OR ctdt.MaCTDT = @MaCTDT) -- lọc theo CTDT nếu có
+    ORDER BY sv.MaSV, ctdt.MaCTDT, hp.MaHP;
 
-CREATE OR ALTER PROCEDURE sp_SinhVienChuaHoanThanhKhoa
-    @MaCTDT BIGINT
+ALTER PROCEDURE [dbo].[sp_SinhVienChuaHoanThanhKhoa]
+    @MaSV   BIGINT = NULL,
+    @MaCTDT BIGINT = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -39,22 +60,33 @@ BEGIN
         SELECT
             sv.MaSV,
             sv.HoTen,
+            ctdt.MaCTDT,
+            ctdt.TenCTDT,
+            ctdt.NamHoc,
             hp.MaHP,
             hp.TenHP,
             ctDiem.LanThi,
             ctDiem.DiemCC,
             ctDiem.DiemGK,
             ctDiem.DiemCK,
-            (ISNULL(ctDiem.DiemCC,0)*0.1 + ISNULL(ctDiem.DiemGK,0)*0.3 + ISNULL(ctDiem.DiemCK,0)*0.6) AS TongKet
+            (ISNULL(ctDiem.DiemCC,0)*0.1
+             + ISNULL(ctDiem.DiemGK,0)*0.3
+             + ISNULL(ctDiem.DiemCK,0)*0.6) AS TongKet
         FROM SinhVien sv
         JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
-        JOIN ChuongTrinhDaoTao ctdt ON cn.MaCN = ctdt.MaCN AND ctdt.MaCTDT = @MaCTDT
+        JOIN ChuongTrinhDaoTao ctdt ON ctdt.MaCN = cn.MaCN
         JOIN HocPhan hp ON hp.MaCTDT = ctdt.MaCTDT
-        LEFT JOIN ChiTietDiem ctDiem ON ctDiem.MaSV = sv.MaSV AND ctDiem.MaHP = hp.MaHP
+        LEFT JOIN ChiTietDiem ctDiem
+               ON ctDiem.MaSV = sv.MaSV AND ctDiem.MaHP = hp.MaHP
+        WHERE (@MaSV IS NULL OR sv.MaSV = @MaSV)
+          AND (@MaCTDT IS NULL OR ctdt.MaCTDT = @MaCTDT)
     )
     SELECT
         kq.MaSV,
         kq.HoTen,
+        kq.MaCTDT,
+        kq.TenCTDT,
+        kq.NamHoc,
         kq.MaHP,
         kq.TenHP,
         kq.LanThi,
@@ -70,20 +102,20 @@ BEGIN
     WHERE kq.MaSV IN (
         SELECT MaSV
         FROM KetQua
-        GROUP BY MaSV
-        HAVING MAX(TongKet) < 5  -- Chỉ lấy SV chưa pass đủ môn
-            OR COUNT(CASE WHEN TongKet >= 5 THEN 1 END) < (SELECT COUNT(*) FROM HocPhan WHERE MaCTDT = @MaCTDT)
+        GROUP BY MaSV, MaCTDT
+        HAVING COUNT(CASE WHEN TongKet >= 5 THEN 1 END)
+               < (SELECT COUNT(*) FROM HocPhan WHERE MaCTDT = KetQua.MaCTDT)
     )
-    AND (kq.TongKet < 5 OR kq.TongKet IS NULL); -- chỉ show môn chưa đạt
-END;
-
+      AND (kq.TongKet < 5 OR kq.TongKet IS NULL)
+    ORDER BY kq.MaSV, kq.MaCTDT, kq.MaHP, kq.LanThi;
+END
 
 CREATE OR ALTER PROCEDURE sp_BaoCaoSiSoLop
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT 
+    SELECT
         lhp.MaLHP,
         hp.TenHP,
         COUNT(dk.MaSV) AS SiSoThucTe,
@@ -99,7 +131,7 @@ BEGIN
     GROUP BY lhp.MaLHP, hp.TenHP, lhp.SiSo, ph.SoPhong, ph.SucChua;
 
     -- Lịch trùng
-    SELECT 
+    SELECT
         lh1.MaLHP, lh1.Ngay, lh1.MaPH
     FROM LichHoc lh1
     JOIN LichHoc lh2 ON lh1.MaPH = lh2.MaPH AND lh1.Ngay = lh2.Ngay AND lh1.MaLHP <> lh2.MaLHP;

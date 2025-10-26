@@ -1,5 +1,6 @@
 package com.example.university.service;
 
+import com.example.university.dto.SinhVienDTO;
 import com.example.university.model.SinhVien;
 import com.example.university.repository.SinhVienRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,4 +35,9 @@ public class SinhVienService {
     public void update(SinhVien sv) { repo.update(sv); }
 
     public void delete(Long maSV) { repo.delete(maSV); }
+
+    public List<SinhVienDTO> findAll() {
+        List<SinhVienDTO> list = repo.findAllSV();
+        return list;
+    }
 }

@@ -1,6 +1,7 @@
 package com.example.university.repository;
 
 import com.example.university.dto.LuongGVDTO;
+import com.example.university.dto.NhanVienDTO;
 import com.example.university.model.NhanVien;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -52,28 +53,43 @@ public class NhanVienRepository {
             return nv;
         });
     }
-    public NhanVien findById(int maNV) {
-        return jdbcTemplate.queryForObject("EXEC sp_GetNhanVienById ?",
-                new Object[]{maNV}, (rs, rowNum) -> {
-                    NhanVien nv = new NhanVien();
-                    nv.setMaNV(rs.getInt("MaNV"));
-                    nv.setHoTen(rs.getString("HoTen"));
-                    nv.setHocVi(rs.getString("HocVi"));
-                    nv.setVaiTro(rs.getString("VaiTro"));
-                    nv.setEmail(rs.getString("Email"));
-                    return nv;
-                });
+    public NhanVienDTO findById(int maNV) {
+        String sql = "EXEC sp_GetNhanVienForEdit ?";
+        return jdbcTemplate.queryForObject(sql, new Object[]{maNV}, (rs, rowNum) -> {
+            NhanVienDTO dto = new NhanVienDTO();
+            dto.setMaNV(rs.getInt("MaNV"));
+            dto.setHoTen(rs.getString("HoTen"));
+            dto.setHocVi(rs.getString("HocVi"));
+            dto.setVaiTro(rs.getString("VaiTro"));
+            dto.setEmail(rs.getString("Email"));
+            dto.setMaNVQuanLy(String.valueOf(rs.getObject("MaNV_QuanLy") != null ? rs.getInt("MaNV_QuanLy") : null));
+            dto.setTenQuanLy(rs.getString("TenQuanLy"));
+            dto.setEmailQuanLy(rs.getString("EmailQuanLy"));
+            return dto;
+        });
     }
 
-    public void add(NhanVien nv) {
-        jdbcTemplate.update("EXEC sp_ThemNhanVien ?,?,?,?",
-                nv.getHoTen(), nv.getHocVi(), nv.getVaiTro(), nv.getEmail());
+
+    public void add(NhanVienDTO nv) {
+        jdbcTemplate.update("EXEC sp_ThemNhanVien ?,?,?,?,?",
+                nv.getHoTen(),
+                nv.getHocVi(),
+                nv.getVaiTro(),
+                nv.getEmail(),
+                nv.getMaNVQuanLy());
     }
 
-    public void update(NhanVien nv) {
-        jdbcTemplate.update("EXEC sp_SuaNhanVien ?,?,?,?,?",
-                nv.getMaNV(), nv.getHoTen(), nv.getHocVi(), nv.getVaiTro(), nv.getEmail());
+
+    public void update(NhanVienDTO nv) {
+        jdbcTemplate.update("EXEC sp_SuaNhanVien ?,?,?,?,?,?",
+                nv.getMaNV(),
+                nv.getHoTen(),
+                nv.getHocVi(),
+                nv.getVaiTro(),
+                nv.getEmail(),
+                nv.getMaNVQuanLy());
     }
+
 
     public void delete(int maNV) {
         jdbcTemplate.update("EXEC sp_XoaNhanVien ?", maNV);

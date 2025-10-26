@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh sách Sinh viên</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .search-add-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-input { flex: 1; }
+        .loading { display: none; text-align: center; color: #6c757d; margin-bottom: 10px; }
+        .modal.show { display: block; background: rgba(0,0,0,0.5); }
+        .modal-dialog {
+            max-height: 90vh; /* Chiều cao tối đa modal */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-body {
+            overflow-y: auto;
+            max-height: calc(90vh - 120px); /* trừ header + footer */
+            padding-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý</a>
+    <div class="collapse navbar-collapse">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item"><a class="nav-link" href="/dashboard/admin">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="/nhan-vien/list">Nhân viên</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/sinh-vien/list">Sinh viên</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2>Danh sách Sinh viên</h2>
+
+    <div class="search-add-group">
+        <input type="text" id="keyword" class="form-control search-input" placeholder="Tìm theo tên hoặc email">
+        <button class="btn btn-outline-secondary" id="searchBtn">Tìm</button>
+        <button class="btn btn-success" onclick="document.getElementById('addModal').classList.add('show')">Thêm Sinh viên</button>
+    </div>
+
+    <div id="loading" class="loading">Đang tải...</div>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Mã SV</th>
+            <th>Họ tên</th>
+            <th>Ngày sinh</th>
+            <th>Giới tính</th>
+            <th>Địa chỉ</th>
+            <th>Chuyên ngành</th>
+            <th>Năm học</th>
+            <th>Email</th>
+            <th>Tình trạng</th>
+            <th>Hành động</th>
+        </tr>
+        </thead>
+        <tbody id="sinhVienTable">
+        <tr th:each="sv : ${sinhVienList}">
+            <td th:text="${sv.maSV}"></td>
+            <td th:text="${sv.hoTen}"></td>
+            <td th:text="${sv.ngaySinh}"></td>
+            <td th:text="${sv.gioiTinh}"></td>
+            <td th:text="${sv.diaChi}"></td>
+            <td th:text="${sv.tenCN}"></td>
+            <td th:text="${sv.namHoc}"></td>
+            <td th:text="${sv.email}"></td>
+            <td th:text="${sv.tinhTrang == 1 ? 'Đang học' : 'Nghỉ'}"></td>
+            <td>
+                <button class="btn btn-warning btn-sm" th:attr="data-id=${sv.maSV}" onclick="openEditModal(this)">Sửa</button>
+                <button class="btn btn-danger btn-sm" th:attr="data-id=${sv.maSV}" onclick="deleteSinhVien(this)">Xóa</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal thêm -->
+<!-- Modal thêm -->
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document"> <!-- modal-lg cho rộng hơn -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5>Thêm Sinh viên</h5>
+                <button type="button" class="close" onclick="document.getElementById('addModal').classList.remove('show')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addForm">
+                    <div class="form-group"><label>Mã SV</label><input type="number" id="addMaSV" class="form-control" required></div>
+                    <div class="form-group"><label>Họ tên</label><input type="text" id="addHoTen" class="form-control" required></div>
+                    <div class="form-group"><label>Ngày sinh</label><input type="date" id="addNgaySinh" class="form-control" required></div>
+                    <div class="form-group"><label>Giới tính</label>
+                        <select id="addGioiTinh" class="form-control">
+                            <option value="M">Nam</option>
+                            <option value="F">Nữ</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Địa chỉ</label><input type="text" id="addDiaChi" class="form-control"></div>
+                    <div class="form-group"><label>Chuyên ngành</label>
+                        <select id="addMaCN" class="form-control">
+                            <option th:each="cn : ${chuyenNganhList}" th:value="${cn.MaCN}" th:text="${cn.TenCN}"></option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Năm học</label><input type="number" id="addNamHoc" class="form-control"></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="addEmail" class="form-control" required></div>
+                    <div class="form-group"><label>Tình trạng</label>
+                        <select id="addTinhTrang" class="form-control">
+                            <option value="1">Đang học</option>
+                            <option value="0">Nghỉ</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('addModal').classList.remove('show')">Đóng</button>
+                <button class="btn btn-primary" onclick="addSinhVien()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal sửa -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header"><h5>Sửa Sinh viên</h5></div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editMaSV">
+                    <div class="form-group"><label>Họ tên</label><input type="text" id="editHoTen" class="form-control" required></div>
+                    <div class="form-group"><label>Ngày sinh</label><input type="date" id="editNgaySinh" class="form-control" required></div>
+                    <div class="form-group"><label>Giới tính</label>
+                        <select id="editGioiTinh" class="form-control">
+                            <option value="M">Nam</option>
+                            <option value="F">Nữ</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Địa chỉ</label><input type="text" id="editDiaChi" class="form-control"></div>
+                    <div class="form-group"><label>Chuyên ngành</label>
+                        <select id="editMaCN" class="form-control">
+                            <option th:each="cn : ${chuyenNganhList}" th:value="${cn.maCN}" th:text="${cn.tenCN}"></option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Năm học</label><input type="number" id="editNamHoc" class="form-control"></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="editEmail" class="form-control" required></div>
+                    <div class="form-group"><label>Tình trạng</label>
+                        <select id="editTinhTrang" class="form-control">
+                            <option value="1">Đang học</option>
+                            <option value="0">Nghỉ</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('editModal').classList.remove('show')">Đóng</button>
+                <button class="btn btn-primary" onclick="updateSinhVien()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function addSinhVien() {
+        const data = {
+            maSV: document.getElementById("addMaSV").value,
+            hoTen: document.getElementById("addHoTen").value,
+            ngaySinh: document.getElementById("addNgaySinh").value,
+            gioiTinh: document.getElementById("addGioiTinh").value,
+            diaChi: document.getElementById("addDiaChi").value,
+            maCN: document.getElementById("addMaCN").value,
+            tinhTrang: document.getElementById("addTinhTrang").value,
+            email: document.getElementById("addEmail").value,
+            namHoc: document.getElementById("addNamHoc").value
+        };
+        fetch("/api/sinhVien/add", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)})
+            .then(res=>res.text()).then(msg=>{ alert(msg); location.reload(); });
+    }
+
+    function openEditModal(btn) {
+        const id = btn.getAttribute("data-id");
+        fetch(`/api/sinhVien/${id}`).then(res=>res.json()).then(sv=>{
+            document.getElementById("editMaSV").value = sv.maSV;
+            document.getElementById("editHoTen").value = sv.hoTen;
+            document.getElementById("editNgaySinh").value = sv.ngaySinh;
+            document.getElementById("editGioiTinh").value = sv.gioiTinh;
+            document.getElementById("editDiaChi").value = sv.diaChi;
+            document.getElementById("editMaCN").value = sv.maCN;
+            document.getElementById("editNamHoc").value = sv.namHoc;
+            document.getElementById("editEmail").value = sv.email;
+            document.getElementById("editTinhTrang").value = sv.tinhTrang;
+            document.getElementById("editModal").classList.add("show");
+        });
+    }
+
+    function updateSinhVien() {
+        const maSV = document.getElementById("editMaSV").value;
+
+        const data = {
+            maSV: maSV,
+            hoTen: document.getElementById("editHoTen").value,
+            ngaySinh: document.getElementById("editNgaySinh").value,
+            gioiTinh: document.getElementById("editGioiTinh").value,
+            diaChi: document.getElementById("editDiaChi").value,
+            maCN: document.getElementById("editMaCN").value,
+            tinhTrang: document.getElementById("editTinhTrang").value,
+            email: document.getElementById("editEmail").value,
+            namHoc: document.getElementById("editNamHoc").value
+        };
+
+        fetch(`/api/sinhVien/update/${maSV}`, {   // dùng backtick và không có dấu $ thừa
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        })
+            .then(res => res.text())
+            .then(msg => { alert(msg); location.reload(); });
+    }
+
+
+    function deleteSinhVien(btn) {
+        if(!confirm("Xóa sinh viên này?")) return;
+        const id = btn.getAttribute("data-id");
+        fetch(`/api/sinhVien/delete/${id}`, {method:"DELETE"})
+            .then(res=>res.text()).then(msg=>{ alert(msg); location.reload(); });
+    }
+</script>
+</body>
+</html>

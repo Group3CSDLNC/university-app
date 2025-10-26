@@ -5,54 +5,6 @@ BEGIN
     SELECT * FROM NhanVien;
 END;
 
-CREATE OR ALTER PROCEDURE sp_GetNhanVienById
-    @MaNV INT
-AS
-BEGIN
-    SET NOCOUNT ON;
-    SELECT * FROM NhanVien WHERE MaNV = @MaNV;
-END;
-
-CREATE OR ALTER PROCEDURE sp_ThemNhanVien
-    @HoTen NVARCHAR(100),
-    @HocVi NVARCHAR(30),
-    @VaiTro NVARCHAR(50),
-    @Email NVARCHAR(100)
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    IF EXISTS (SELECT 1 FROM NhanVien WHERE Email = @Email)
-        THROW 72001, 'Email nhân viên đã tồn tại', 1;
-
-    INSERT INTO NhanVien (HoTen, HocVi, VaiTro, Email)
-    VALUES (@HoTen, @HocVi, @VaiTro, @Email);
-END;
-
-
-CREATE OR ALTER PROCEDURE sp_SuaNhanVien
-    @MaNV INT,
-    @HoTen NVARCHAR(100),
-    @HocVi NVARCHAR(30),
-    @VaiTro NVARCHAR(50),
-    @Email NVARCHAR(100)
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    IF NOT EXISTS (SELECT 1 FROM NhanVien WHERE MaNV = @MaNV)
-        THROW 72002, 'Nhân viên không tồn tại', 1;
-
-    IF EXISTS (SELECT 1 FROM NhanVien WHERE Email = @Email AND MaNV <> @MaNV)
-        THROW 72001, 'Email nhân viên đã tồn tại', 1;
-
-    UPDATE NhanVien
-    SET HoTen = @HoTen,
-        HocVi = @HocVi,
-        VaiTro = @VaiTro,
-        Email = @Email
-    WHERE MaNV = @MaNV;
-END;
 
 CREATE OR ALTER PROCEDURE sp_XoaNhanVien
     @MaNV INT
@@ -82,3 +34,98 @@ BEGIN
     FROM NhanVien
     WHERE ',' + @VaiTroList + ',' LIKE '%,' + VaiTro + ',%';
 END
+-- Thêm nhân viên
+CREATE OR ALTER PROCEDURE sp_ThemNhanVien
+    @HoTen NVARCHAR(100),
+    @HocVi NVARCHAR(30),
+    @VaiTro NVARCHAR(50),
+    @Email NVARCHAR(100),
+    @MaNV_QuanLy INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS (SELECT 1 FROM NhanVien WHERE Email = @Email)
+        THROW 72001, 'Email nhân viên đã tồn tại', 1;
+
+    INSERT INTO NhanVien (HoTen, HocVi, VaiTro, Email)
+    VALUES (@HoTen, @HocVi, @VaiTro, @Email);
+
+    DECLARE @NewMaNV INT = SCOPE_IDENTITY();
+
+    -- Nếu có chỉ định quản lý thì lưu vào bảng NhanVien_QuanLy
+    IF @MaNV_QuanLy IS NOT NULL
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM NhanVien WHERE MaNV = @MaNV_QuanLy)
+            THROW 72005, 'Mã nhân viên quản lý không tồn tại', 1;
+
+        INSERT INTO NhanVien_QuanLy (MaNV, MaNV_QuanLy)
+        VALUES (@NewMaNV, @MaNV_QuanLy);
+    END
+END;
+GO
+
+
+-- Sửa nhân viên
+CREATE OR ALTER PROCEDURE sp_SuaNhanVien
+    @MaNV INT,
+    @HoTen NVARCHAR(100),
+    @HocVi NVARCHAR(30),
+    @VaiTro NVARCHAR(50),
+    @Email NVARCHAR(100),
+    @MaNV_QuanLy INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM NhanVien WHERE MaNV = @MaNV)
+        THROW 72002, 'Nhân viên không tồn tại', 1;
+
+    IF EXISTS (SELECT 1 FROM NhanVien WHERE Email = @Email AND MaNV <> @MaNV)
+        THROW 72001, 'Email nhân viên đã tồn tại', 1;
+
+    UPDATE NhanVien
+    SET HoTen = @HoTen,
+        HocVi = @HocVi,
+        VaiTro = @VaiTro,
+        Email = @Email
+    WHERE MaNV = @MaNV;
+
+    -- Xử lý cập nhật quản lý
+    DELETE FROM NhanVien_QuanLy WHERE MaNV = @MaNV;
+
+    IF @MaNV_QuanLy IS NOT NULL
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM NhanVien WHERE MaNV = @MaNV_QuanLy)
+            THROW 72005, 'Mã nhân viên quản lý không tồn tại', 1;
+
+        INSERT INTO NhanVien_QuanLy (MaNV, MaNV_QuanLy)
+        VALUES (@MaNV, @MaNV_QuanLy);
+    END
+END;
+GO
+
+CREATE OR ALTER PROCEDURE sp_GetNhanVienForEdit
+    @MaNV INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM NhanVien WHERE MaNV = @MaNV)
+        THROW 72002, 'Nhân viên không tồn tại', 1;
+
+    SELECT
+        nv.MaNV,
+        nv.HoTen,
+        nv.HocVi,
+        nv.VaiTro,
+        nv.Email,
+        ql.MaNV_QuanLy,
+        nvQL.HoTen AS TenQuanLy,
+        nvQL.Email AS EmailQuanLy
+    FROM NhanVien nv
+    LEFT JOIN NhanVien_QuanLy ql ON nv.MaNV = ql.MaNV
+    LEFT JOIN NhanVien nvQL ON ql.MaNV_QuanLy = nvQL.MaNV
+    WHERE nv.MaNV = @MaNV;
+END;
+GO
