@@ -184,3 +184,27 @@ BEGIN
     ORDER BY HoTen;
 END
 GO
+
+CREATE OR ALTER PROCEDURE sp_GetSinhVienById
+    @MaSV INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM SinhVien WHERE MaSV = @MaSV)
+        THROW 73001, 'Sinh viên không tồn tại', 1;
+
+    SELECT
+        MaSV,
+        HoTen,
+        NgaySinh,
+        GioiTinh,
+        DiaChi,
+        MaCN,
+        TinhTrang,
+        Email,
+        NamHoc
+    FROM SinhVien
+    WHERE MaSV = @MaSV;
+END;
+GO

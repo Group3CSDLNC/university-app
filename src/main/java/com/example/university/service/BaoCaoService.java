@@ -17,12 +17,13 @@ public class BaoCaoService {
         return repo.getBangDiem(maSV, maCTDT);
     }
 
-    public List<Map<String,Object>> chuaHoanThanh(Long maCTDT) {
-        return repo.getChuaHoanThanh(maCTDT);
+    public List<Map<String,Object>> chuaHoanThanh(Long maSV, Long maCTDT) {
+        return repo.getChuaHoanThanh(maSV, maCTDT);
     }
 
     public List<Map<String,Object>> baoCaoSiSo() {
         return repo.getBaoCaoSiSo();
     }
+
 
 }
