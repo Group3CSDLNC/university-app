@@ -139,7 +139,7 @@
             <td th:text="${nv.HeSo}"></td>
             <td th:text="${nv.SoSV}"></td>
             <td th:text="${nv.SoNhanVienDuoiQuyen}"></td>
-            <td th:text="${#numbers.formatDecimal(nv.Luong,1,'COMMA',0,'POINT')}"></td>
+            <td th:text="${#numbers.formatDecimal(nv.Luong,1,'COMMA',0,'POINT') + ' VNĐ'}"></td>
         </tr>
         </tbody>
     </table>

@@ -21,4 +21,10 @@ public class LichHocService {
 
     public void delete(int id) { repo.delete(id); }
 
+    public void themLichHoc(LichHoc lichHoc) {
+        repo.themLichHoc(lichHoc);
+    }
+    public List<LichHoc> getLichHocByMaLHP(Long maLHP) {
+        return repo.getLichHocByMaLHP(maLHP);
+    }
 }

@@ -2,6 +2,7 @@ package com.example.university.repository;
 
 import com.example.university.model.LichHoc;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -64,6 +65,27 @@ public class LichHocRepository {
         return jdbcTemplate.update(
                 "EXEC sp_XoaLichHoc ?",
                 maLichHoc
+        );
+    }
+
+    public void themLichHoc(LichHoc lichHoc) {
+        jdbcTemplate.update(
+                "EXEC spThemLichHoc ?, ?, ?, ?, ?, ?, ?",
+                lichHoc.getMaLHP(),
+                lichHoc.getMaPH(),
+                lichHoc.getTietBatDau(),
+                lichHoc.getSoTiet(),
+                lichHoc.getThuTrongTuan(),
+                lichHoc.getNgayBatDau(),
+                lichHoc.getNgayKetThuc()
+        );
+    }
+
+    public List<LichHoc> getLichHocByMaLHP(Long maLHP) {
+        return jdbcTemplate.query(
+                "EXEC sp_GetLichHocByMaLHP ?",
+                new BeanPropertyRowMapper<>(LichHoc.class),
+                maLHP
         );
     }
 }
