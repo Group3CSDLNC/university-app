@@ -2,8 +2,10 @@ package com.example.university.repository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,5 +40,30 @@ public class KetQuaRepository {
     ) {
         String sql = "EXEC sp_GetSinhVienChuaCoDiem @MaSV=?, @MaCN=?, @MaHP=?, @MaCTDT=?, @Keyword=?";
         return jdbcTemplate.queryForList(sql, maSV, maCN, maHP, maCTDT, keyword);
+    }
+
+    public List<Map<String, Object>> getDanhSachHocVien(Long maLHP, Long maSV, String keyword) {
+        SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                .withProcedureName("sp_LayDanhSachHocVien");
+
+        Map<String, Object> inParams = new HashMap<>();
+        inParams.put("MaLHP", maLHP);
+        inParams.put("MaSV", maSV);
+        inParams.put("Keyword", keyword);
+
+        Map<String, Object> result = jdbcCall.execute(inParams);
+
+        // Stored procedure trả về result set mặc định là "#result-set-1"
+        return (List<Map<String, Object>>) result.get("#result-set-1");
+    }
+
+    public void themDiem(Long maSV, Long maHP, Double diemCC, Double diemGK, Double diemCK) {
+        String sql = "EXEC sp_ThemDiem @MaSV=?, @MaHP=?, @DiemCC=?, @DiemGK=?, @DiemCK=?";
+        jdbcTemplate.update(sql, maSV, maHP, diemCC, diemGK, diemCK);
+    }
+
+    public void suaDiem(Long maSV, Long maHP, Integer lanThi, Double diemCC, Double diemGK, Double diemCK) {
+        String sql = "EXEC sp_SuaDiem @MaSV=?, @MaHP=?, @LanThi=?, @DiemCC=?, @DiemGK=?, @DiemCK=?";
+        jdbcTemplate.update(sql, maSV, maHP, lanThi, diemCC, diemGK, diemCK);
     }
 }

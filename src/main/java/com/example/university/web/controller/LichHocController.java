@@ -39,4 +39,23 @@ public class LichHocController {
         service.delete(id);
         return ResponseEntity.ok(Collections.singletonMap("message", "Xóa lịch học thành công"));
     }
+
+    @PostMapping("/them")
+    public ResponseEntity<?> themLichHoc(@RequestBody LichHoc lichHoc) {
+        try {
+            service.themLichHoc(lichHoc);
+            return ResponseEntity.ok("Thêm lịch học thành công");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
+        }
+    }
+    @GetMapping("/{maLHP}")
+    public ResponseEntity<?> getLichHocByMaLHP(@PathVariable Long maLHP) {
+        try {
+            List<LichHoc> ds = service.getLichHocByMaLHP(maLHP);
+            return ResponseEntity.ok(ds);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
+        }
+    }
 }

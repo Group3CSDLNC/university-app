@@ -225,6 +225,56 @@
     </div>
 </div>
 
+<!-- Modal Gán Lịch học -->
+<div class="modal fade" id="ganLichModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content p-3">
+            <h5 class="modal-title mb-3">Gán Lịch học</h5>
+            <input type="hidden" id="lichMaLHP">
+
+            <div class="form-group">
+                <label>Tiết bắt đầu</label>
+                <input type="number" id="tietBatDauInput" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label>Phòng học</label>
+                <input type="number" id="maPHInput" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label>Số tiết</label>
+                <input type="number" id="soTietInput" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label>Thứ trong tuần</label>
+                <select id="thuTrongTuanInput" class="form-control" required>
+                    <option value="2">Thứ 2</option>
+                    <option value="3">Thứ 3</option>
+                    <option value="4">Thứ 4</option>
+                    <option value="5">Thứ 5</option>
+                    <option value="6">Thứ 6</option>
+                    <option value="7">Thứ 7</option>
+                    <option value="8">Chủ nhật</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Ngày bắt đầu</label>
+                <input type="date" id="ngayBatDauInput" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label>Ngày kết thúc</label>
+                <input type="date" id="ngayKetThucInput" class="form-control" required>
+            </div>
+
+            <button class="btn btn-success" onclick="saveLichHoc()">Lưu</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Đóng</button>
+        </div>
+    </div>
+</div>
 
 <script th:inline="javascript">
     const loading = document.getElementById("loading");
@@ -278,7 +328,13 @@
                     btnGanGV.textContent = "Gán GV";
                     btnGanGV.onclick = () => openGanGVModal(lhp.MaLHP, lhp.MaHP, lhp.MaGiangVien, lhp.MaTroGiang, lhp.SoTietPhanCong);
 
-                    btnGroup.append(btnEdit, btnDelete, btnGanGV);
+                    const btnGanLich = document.createElement("button");
+                    btnGanLich.className = "btn btn-sm btn-secondary";
+                    btnGanLich.textContent = "Gán lịch học";
+                    btnGanLich.onclick = () => openGanLichModal(lhp.MaLHP);
+
+                    btnGroup.append(btnEdit, btnDelete, btnGanGV, btnGanLich);
+
                     tdActions.appendChild(btnGroup);
                     tr.appendChild(tdActions);
 
@@ -377,6 +433,69 @@
 
         // Hiển thị modal
         $('#lopHocPhanModal').modal('show');
+    }
+
+    function openGanLichModal(maLHP) {
+        document.getElementById("lichMaLHP").value = maLHP;
+
+        // reset form
+        document.getElementById("tietBatDauInput").value = "";
+        document.getElementById("maPHInput").value = "";
+        document.getElementById("soTietInput").value = "";
+        document.getElementById("thuTrongTuanInput").value = "";
+        document.getElementById("ngayBatDauInput").value = "";
+        document.getElementById("ngayKetThucInput").value = "";
+
+        // call API lấy lịch học
+        fetch(`/api/lichHoc/${maLHP}`)
+            .then(res => {
+                if (res.status === 204) return null; // không có lịch
+                return res.json();
+            })
+            .then(data => {
+                if (data && data.length > 0) {
+                    const lh = data[0]; // lấy lịch đầu tiên
+                    document.getElementById("tietBatDauInput").value = lh.tietBatDau ?? "";
+                    document.getElementById("maPHInput").value = lh.maPH ?? "";
+                    document.getElementById("soTietInput").value = lh.soTiet ?? "";
+                    document.getElementById("thuTrongTuanInput").value = lh.thuTrongTuan ?? "";
+                    if (lh.ngayBatDau) {
+                        document.getElementById("ngayBatDauInput").value = lh.ngayBatDau.split("T")[0];
+                    }
+                    if (lh.ngayKetThuc) {
+                        document.getElementById("ngayKetThucInput").value = lh.ngayKetThuc.split("T")[0];
+                    }
+                }
+            })
+            .catch(err => console.error("Lỗi load lịch học:", err));
+
+        $('#ganLichModal').modal('show');
+    }
+
+    function saveLichHoc() {
+        const maLHP = document.getElementById("lichMaLHP").value;
+        const tietBatDau = document.getElementById("tietBatDauInput").value;
+        const maPH = document.getElementById("maPHInput").value;
+        const soTiet = document.getElementById("soTietInput").value;
+        const thuTrongTuan = document.getElementById("thuTrongTuanInput").value;
+        const ngayBatDau = document.getElementById("ngayBatDauInput").value;
+        const ngayKetThuc = document.getElementById("ngayKetThucInput").value;
+
+        const params = new URLSearchParams({
+            maLHP, tietBatDau, maPH, soTiet, thuTrongTuan, ngayBatDau, ngayKetThuc
+        });
+
+        fetch(`/api/lichhoc/save`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString()
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message || "Lưu thành công!");
+                $('#ganLichModal').modal('hide');
+            })
+            .catch(err => alert("Lỗi: " + err.message));
     }
 
     // Mở modal gán GV

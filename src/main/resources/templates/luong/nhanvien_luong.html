@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KetQuaHocTapTongKet</title>
+    <title>Bảng lương nhân viên</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
     <style>
         .navbar-brand { font-weight: bold; }
@@ -21,8 +21,11 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mr-auto">
-            <li class="nav-item">
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin')}" class="nav-item">
                 <a class="nav-link" href="/dashboard/admin">Dashboard</a>
+            </li>
+            <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'NhanVien')}" class="nav-item">
+                <a class="nav-link" href="/dashboard/nhanvien">Dashboard</a>
             </li>
             <li class="nav-item" th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}">
                 <a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a>
@@ -31,7 +34,7 @@
                 <a class="nav-link" href="/khoa/list">Khoa</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link active" href="/hocPhan/hocphan_list">Học phần</a>
+                <a class="nav-link" href="/hocPhan/hocphan_list">Học phần</a>
             </li>
             <li th:if="${sessionService.getCurrentUser().getLoaiTaiKhoan() == 'Admin'}" class="nav-item">
                 <a class="nav-link" href="/lopHocPhan/lopHocPhan_list">Lớp Học phần</a>
@@ -52,7 +55,7 @@
                 <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
             </li>
             <li th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'NhanVien')}" class="nav-item">
-                <a class="nav-link" href="/luong/list">Lương</a>
+                <a class="nav-link  active" href="/luong/list">Lương</a>
             </li>
         </ul>
         <ul class="navbar-nav">
@@ -70,106 +73,78 @@
 </nav>
 
 <div class="container mt-4">
-    <h2>Kết quả tổng kết học tập</h2>
+    <h2 class="mb-3">Bảng lương nhân viên</h2>
 
-    <!-- Filter -->
-    <div class="search-add-group mb-3 d-flex align-items-center">
-        <select id="maCNFilter" class="form-control mr-2">
-            <option value="">-- Tất cả CN --</option>
-            <option th:each="cn : ${chuyenNganhs}"
-                    th:value="${cn.maCN}"
-                    th:text="${cn.tenCN}"></option>
-        </select>
-
-        <select id="maSVFilter" class="form-control mr-2">
-            <option value="">-- Tất cả Sinh viên --</option>
-            <option th:each="sv : ${sinhViens}"
-                    th:value="${sv.maSV}"
-                    th:text="${sv.hoTen}"></option>
-        </select>
-        <div class="ml-auto d-flex">
-            <button class="btn btn-outline-secondary mr-2" onclick="searchTongKet()">Lọc</button>
+    <!-- Form lọc theo nhân viên/tháng/năm -->
+    <form class="form-inline mb-3" method="get" th:action="@{/luong/list}">
+        <!-- Dropdown nhân viên -->
+        <div th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin')}" class="form-group mr-2">
+            <label for="maNV" class="mr-2">Nhân viên</label>
+            <select class="form-control" id="maNV" name="maNV">
+                <option value="" th:text="'Tất cả'" th:selected="${selectedMaNV == null}"></option>
+                <option th:each="nv : ${nhanViens}"
+                        th:value="${nv.maNV}"
+                        th:text="${nv.hoTen + ' (' + nv.maNV + ')'}"
+                        th:selected="${nv.maNV == selectedMaNV}">
+                </option>
+            </select>
         </div>
-    </div>
+        <!-- Dropdown tháng -->
+        <div class="form-group mr-2">
+            <label for="thang" class="mr-2">Tháng</label>
+            <select class="form-control" id="thang" name="thang" required>
+                <option th:each="m : ${monthMap}"
+                        th:value="${m.key}"
+                        th:text="${m.value}"
+                        th:selected="${m.key == selectedThang}">
+                </option>
+            </select>
+        </div>
 
-    <div id="loading" style="display:none;">Đang tải...</div>
+        <!-- Dropdown năm -->
+        <div class="form-group mr-2">
+            <label for="nam" class="mr-2">Năm</label>
+            <select class="form-control" id="nam" name="nam" required>
+                <option th:each="y : ${yearMap}"
+                        th:value="${y.key}"
+                        th:text="${y.value}"
+                        th:selected="${y.key == selectedNam}">
+                </option>
+            </select>
+        </div>
 
-    <!-- Table -->
+        <button type="submit" class="btn btn-primary">Xem lương</button>
+    </form>
+
+    <!-- Bảng lương -->
     <table class="table table-bordered table-hover">
-        <thead class="thead-dark">
+        <thead class="thead-light">
         <tr>
-            <th>Mã SV</th>
-            <th>Tên sinh viên</th>
-            <th>Chuyên ngành</th>
-            <th>Tổng tín chỉ yêu cầu</th>
-            <th>Tổng tín chỉ tích lũy</th>
-            <th>GPA</th>
-            <th>Xếp loại</th>
-            <th>Trạng thái tốt nghiệp</th>
+            <th>Mã NV</th>
+            <th>Hộ tên</th>
+            <th>Vai trò</th>
+            <th>Tổng số giờ dạy</th>
+            <th>Hệ số</th>
+            <th>Số SV quản lý</th>
+            <th>Số nhân viên dưới quyền</th>
+            <th>Tổng lương</th>
         </tr>
         </thead>
-        <tbody id="tongKetTableBody"></tbody>
+        <tbody>
+        <tr th:each="nv : ${listLuong}">
+            <td th:text="${nv.MaNV}"></td>
+            <td th:text="${nv.HoTen}"></td>
+            <td th:text="${nv.VaiTro}"></td>
+            <td th:text="${nv.TongGio}"></td>
+            <td th:text="${nv.HeSo}"></td>
+            <td th:text="${nv.SoSV}"></td>
+            <td th:text="${nv.SoNhanVienDuoiQuyen}"></td>
+            <td th:text="${#numbers.formatDecimal(nv.Luong,1,'COMMA',0,'POINT') + ' VNĐ'}"></td>
+        </tr>
+        </tbody>
     </table>
 </div>
 
-<script th:inline="javascript">
-    const loading = document.getElementById("loading");
-    const tbody = document.getElementById("tongKetTableBody");
-
-    function searchTongKet() {
-        const params = new URLSearchParams({
-            maSV: document.getElementById("maSVFilter").value,
-            maCN: document.getElementById("maCNFilter").value
-        });
-
-        loading.style.display = "block";
-        fetch(`/api/ketQua/tongket?${params.toString()}`)
-            .then(res => res.json())
-            .then(data => {
-                tbody.innerHTML = "";
-
-                if (data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="9" class="text-center">Không có dữ liệu</td></tr>`;
-                    return;
-                }
-
-                data.forEach(row => {
-                    const tr = document.createElement("tr");
-
-                    // gán sự kiện click cho từng dòng
-                    tr.style.cursor = "pointer"; // đổi chuột để nhìn trực quan hơn
-                    tr.onclick = () => {
-                        window.location.href = `/diem-thi/chitiet?maSV=${row["MaSV"]}`;
-                    };
-
-                    ["MaSV","TenSV","TenCN","TongTinChiYeuCau",
-                        "TongTinChiTichLuy","DiemTB","XepLoaiChung","TrangThai"].forEach(key => {
-                        const td = document.createElement("td");
-
-                        if (key === "DiemTB" && row[key] != null) {
-                            td.textContent = parseFloat(row[key]).toFixed(2);
-                        } else {
-                            td.textContent = row[key] ?? "";
-                        }
-
-                        tr.appendChild(td);
-                    });
-                    tbody.appendChild(tr);
-                });
-
-            })
-            .catch(err => alert("Lỗi: " + err.message))
-            .finally(() => loading.style.display = "none");
-    }
-
-    // load mặc định khi vào trang
-    window.onload = searchTongKet;
-</script>
-
-<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
-
-
 

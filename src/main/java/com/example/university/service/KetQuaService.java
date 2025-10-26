@@ -33,4 +33,15 @@ public class KetQuaService {
     ) {
         return repo.getSinhVienChuaCoDiem(maSV, maCN, maHP, maCTDT, keyword);
     }
+    public List<Map<String, Object>> getDanhSachHocVien(Long maLHP, Long maSV, String keyword) {
+        return repo.getDanhSachHocVien(maLHP, maSV, keyword);
+    }
+
+    public void themDiem(Long maSV, Long maHP, Double diemCC, Double diemGK, Double diemCK) {
+        repo.themDiem(maSV, maHP, diemCC, diemGK, diemCK);
+    }
+
+    public void suaDiem(Long maSV, Long maHP, Integer lanThi, Double diemCC, Double diemGK, Double diemCK) {
+        repo.suaDiem(maSV, maHP, lanThi, diemCC, diemGK, diemCK);
+    }
 }

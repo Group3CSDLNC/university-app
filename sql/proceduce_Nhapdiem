@@ -1,112 +1,165 @@
-CREATE OR ALTER PROCEDURE sp_NhapDiemSinhVien
-    @MaSV BIGINT,
+CREATE OR ALTER PROCEDURE sp_LayDanhSachHocVien
     @MaLHP BIGINT,
-    @DiemCC DECIMAL(3,1),
-    @DiemGK DECIMAL(3,1),
-    @DiemCK DECIMAL(3,1)
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE @MaHP BIGINT;
-    DECLARE @LanThi INT;
-    DECLARE @TongKet DECIMAL(3,1);
-    DECLARE @XepLoai VARCHAR(20);
-
-    -- Lấy MaHP từ MaLHP
-    SELECT @MaHP = MaHP
-    FROM LopHocPhan
-    WHERE MaLHP = @MaLHP;
-
-    IF @MaHP IS NULL
-    BEGIN
-        RAISERROR('LopHocPhan không tồn tại', 16, 1);
-        RETURN;
-    END;
-
-    -- Kiểm tra sinh viên có đăng ký lớp học phần chưa
-    IF NOT EXISTS (SELECT 1 FROM DangKy WHERE MaSV = @MaSV AND MaLHP = @MaLHP)
-    BEGIN
-        RAISERROR('Sinh viên chưa đăng ký lớp học phần này', 16, 1);
-        RETURN;
-    END;
-
-    -- Tìm lần thi
-    SELECT @LanThi = ISNULL(MAX(LanThi), 0) + 1
-    FROM ChiTietDiem
-    WHERE MaSV = @MaSV AND MaHP = @MaHP;
-
-    -- Ghi ChiTietDiem
-    INSERT INTO ChiTietDiem (MaSV, MaHP, LanThi, DiemCC, DiemGK, DiemCK)
-    VALUES (@MaSV, @MaHP, @LanThi, @DiemCC, @DiemGK, @DiemCK);
-
-    -- Tính tổng kết (theo lần thi mới nhất)
-    SET @TongKet = ROUND(@DiemCC * 0.1 + @DiemGK * 0.3 + @DiemCK * 0.6, 1);
-
-    -- Xếp loại
-    SET @XepLoai = CASE
-                      WHEN @TongKet >= 8.5 THEN 'Gioi'
-                      WHEN @TongKet >= 7.0 THEN 'Kha'
-                      WHEN @TongKet >= 5.0 THEN 'Trung binh'
-                      ELSE 'Yeu'
-                   END;
-
-    -- Cập nhật KetQuaTongKet theo lần thi mới nhất
-    IF EXISTS (SELECT 1 FROM KetQuaTongKet WHERE MaSV = @MaSV AND MaHP = @MaHP)
-    BEGIN
-        UPDATE KetQuaTongKet
-        SET TongKet = @TongKet,
-            XepLoai = @XepLoai
-        WHERE MaSV = @MaSV AND MaHP = @MaHP;
-    END
-    ELSE
-    BEGIN
-        INSERT INTO KetQuaTongKet (MaSV, MaHP, TongKet, XepLoai)
-        VALUES (@MaSV, @MaHP, @TongKet, @XepLoai);
-    END;
-END;
-GO
-
-CREATE OR ALTER PROCEDURE sp_GetSinhVienChuaCoDiem
     @MaSV BIGINT = NULL,
-    @MaCN BIGINT = NULL,
-    @MaHP BIGINT = NULL,
-    @MaCTDT BIGINT = NULL,
     @Keyword NVARCHAR(100) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT sv.MaSV,
-           sv.HoTen AS TenSinhVien,
-           sv.Email,
-           sv.MaCN,
-           cn.TenCN,
-           hp.MaHP,
-           hp.TenHP,
-           hp.SoTinChi,
-           lhp.MaLHP,
-           lhp.HocKy,
-           lhp.NamHoc,
-           ct.MaCTDT,
-           ct.TenCTDT
+    SELECT
+        sv.MaSV,
+        sv.HoTen,
+        sv.MaCN,
+        cn.TenCN,
+        dk.MaLHP,
+        hp.MaHP,
+        hp.TenHP,
+        sv.NamHoc,
+        NULLIF(ctd.DiemCC, 0) AS DiemCC,
+        NULLIF(ctd.DiemGK, 0) AS DiemGK,
+        NULLIF(ctd.DiemCK, 0) AS DiemCK,
+        CASE
+            WHEN ctd.MaSV IS NOT NULL THEN 1
+            ELSE 0
+            END AS DaCoDiem
     FROM DangKy dk
-    JOIN SinhVien sv ON dk.MaSV = sv.MaSV
-    JOIN LopHocPhan lhp ON dk.MaLHP = lhp.MaLHP
-    JOIN HocPhan hp ON lhp.MaHP = hp.MaHP
-    JOIN ChuongTrinhDaoTao ct ON hp.MaCTDT = ct.MaCTDT
-    JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
-    WHERE NOT EXISTS (
-              SELECT 1
-              FROM ChiTietDiem d
-              WHERE d.MaSV = sv.MaSV
-                AND d.MaHP = hp.MaHP
-          )
+             INNER JOIN SinhVien sv ON dk.MaSV = sv.MaSV
+             INNER JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
+             INNER JOIN LopHocPhan lhp ON dk.MaLHP = lhp.MaLHP
+             INNER JOIN HocPhan hp ON lhp.MaHP = hp.MaHP
+             LEFT JOIN ChiTietDiem ctd ON ctd.MaSV = sv.MaSV AND ctd.MaHP = hp.MaHP
+    WHERE dk.MaLHP = @MaLHP
       AND (@MaSV IS NULL OR sv.MaSV = @MaSV)
-      AND (@MaCN IS NULL OR sv.MaCN = @MaCN)
-      AND (@MaHP IS NULL OR hp.MaHP = @MaHP)
-      AND (@MaCTDT IS NULL OR ct.MaCTDT = @MaCTDT)
-      AND (@Keyword IS NULL OR sv.HoTen LIKE N'%' + @Keyword + N'%')
+      AND (@Keyword IS NULL OR sv.HoTen LIKE '%' + @Keyword + '%')
     ORDER BY sv.HoTen;
+END;
+GO
+
+
+CREATE OR ALTER PROCEDURE sp_LayDanhSachHocVien
+    @MaLHP BIGINT,
+    @MaSV BIGINT = NULL,
+    @Keyword NVARCHAR(100) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        sv.MaSV,
+        sv.HoTen,
+        sv.MaCN,
+        cn.TenCN,
+        dk.MaLHP,
+        hp.MaHP,
+        hp.TenHP,
+        sv.NamHoc,
+        NULLIF(ctd.DiemCC, 0) AS DiemCC,
+        NULLIF(ctd.DiemGK, 0) AS DiemGK,
+        NULLIF(ctd.DiemCK, 0) AS DiemCK,
+        CASE
+            WHEN ctd.MaSV IS NOT NULL THEN 1
+            ELSE 0
+            END AS DaCoDiem
+    FROM DangKy dk
+             INNER JOIN SinhVien sv ON dk.MaSV = sv.MaSV
+             INNER JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
+             INNER JOIN LopHocPhan lhp ON dk.MaLHP = lhp.MaLHP
+             INNER JOIN HocPhan hp ON lhp.MaHP = hp.MaHP
+             LEFT JOIN ChiTietDiem ctd ON ctd.MaSV = sv.MaSV AND ctd.MaHP = hp.MaHP
+    WHERE dk.MaLHP = @MaLHP
+      AND (@MaSV IS NULL OR sv.MaSV = @MaSV)
+      AND (@Keyword IS NULL OR sv.HoTen LIKE '%' + @Keyword + '%')
+    ORDER BY sv.HoTen;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE sp_ThemDiem
+    @MaSV BIGINT,
+    @MaHP BIGINT,
+    @DiemCC DECIMAL(3,1) = NULL,
+    @DiemGK DECIMAL(3,1) = NULL,
+    @DiemCK DECIMAL(3,1) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Chỉ cho phép chèn nếu chưa có điểm LanThi = 1
+    IF NOT EXISTS (
+        SELECT 1
+        FROM ChiTietDiem
+        WHERE MaSV = @MaSV AND MaHP = @MaHP AND LanThi = 1
+    )
+        BEGIN
+            INSERT INTO ChiTietDiem(MaSV, MaHP, LanThi, DiemCC, DiemGK, DiemCK)
+            VALUES(@MaSV, @MaHP, 1, @DiemCC, @DiemGK, @DiemCK);
+        END
+    ELSE
+        BEGIN
+            RAISERROR('Sinh viên đã có điểm lần thi 1, không thể thêm mới.', 16, 1);
+        END
+END;
+GO
+
+CREATE OR ALTER PROCEDURE sp_SuaDiem
+    @MaSV BIGINT,
+    @MaHP BIGINT,
+    @LanThi INT,
+    @DiemCC DECIMAL(3,1) = NULL,
+    @DiemGK DECIMAL(3,1) = NULL,
+    @DiemCK DECIMAL(3,1) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Kiểm tra bản ghi tồn tại
+    IF EXISTS (
+        SELECT 1
+        FROM ChiTietDiem
+        WHERE MaSV = @MaSV AND MaHP = @MaHP AND LanThi = @LanThi
+    )
+        BEGIN
+            UPDATE ChiTietDiem
+            SET DiemCC = @DiemCC,
+                DiemGK = @DiemGK,
+                DiemCK = @DiemCK
+            WHERE MaSV = @MaSV AND MaHP = @MaHP AND LanThi = @LanThi;
+        END
+    ELSE
+        BEGIN
+            RAISERROR('Không tìm thấy bản ghi để sửa điểm.', 16, 1);
+        END
+END;
+GO
+
+
+CREATE OR ALTER TRIGGER trg_UpdateKetQua
+    ON ChiTietDiem
+    AFTER INSERT, UPDATE
+    AS
+BEGIN
+    SET NOCOUNT ON;
+
+    ;WITH CTE_TongKet AS (
+        SELECT
+            i.MaSV,
+            i.MaHP,
+            ROUND(DiemCC*0.1 + DiemGK*0.3 + DiemCK*0.6, 1) AS TongKet,
+            CASE
+                WHEN ROUND(DiemCC*0.1 + DiemGK*0.3 + DiemCK*0.6, 1) >= 8 THEN 'Giỏi'
+                WHEN ROUND(DiemCC*0.1 + DiemGK*0.3 + DiemCK*0.6, 1) >= 6.5 THEN 'Khá'
+                WHEN ROUND(DiemCC*0.1 + DiemGK*0.3 + DiemCK*0.6, 1) >= 5 THEN 'Trung bình'
+                ELSE 'Yếu'
+                END AS XepLoai
+        FROM INSERTED i
+        WHERE LanThi = 1
+        )
+        MERGE KetQuaTongKet AS target
+    USING CTE_TongKet AS src
+    ON target.MaSV = src.MaSV AND target.MaHP = src.MaHP
+    WHEN MATCHED THEN
+        UPDATE SET TongKet = src.TongKet, XepLoai = src.XepLoai
+    WHEN NOT MATCHED THEN
+        INSERT(MaSV, MaHP, TongKet, XepLoai)
+        VALUES(src.MaSV, src.MaHP, src.TongKet, src.XepLoai);
 END;
 GO

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .navbar-brand { font-weight: bold; }
+        .nav-link { color: #6c757d !important; }
+        .nav-link.active { color: #007bff !important; }
+        .dropdown-menu { min-width: 200px; }
+    </style>
+</head>
+<body>
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý trung tâm đào tạo</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/dashboard/nhanvien">Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/giang-vien/list">Giảng viên</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/diem-thi/list">Điểm thi</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/luong/list">Lương</a>
+            </li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown">
+                    <span th:text="${sessionService.getCurrentUser().getLoaiTaiKhoan()} ?: 'Nhân viên'"></span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" href="/profile">Hồ sơ</a>
+                    <a class="dropdown-item" href="/logout">Đăng xuất</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2>Danh sách Lớp học phần</h2>
+
+    <!-- Filter Section -->
+    <div class="search-add-group mb-3 d-flex align-items-center">
+        <!-- CTDT -->
+        <select id="maCTDTFilter" class="form-control mr-2">
+            <option value="">-- Tất cả CTDT --</option>
+            <option th:each="ctdt : ${ctdtList}"
+                    th:value="${ctdt.maCTDT}"
+                    th:text="${ctdt.tenCTDT}"></option>
+        </select>
+
+        <!-- Học phần -->
+        <select id="maHPFilter" class="form-control mr-2">
+            <option value="">-- Tất cả Học phần --</option>
+            <!-- sẽ được load động theo CTDT -->
+        </select>
+
+        <!-- Năm học -->
+        <select id="namHocFilter" class="form-control mr-2">
+            <option value="">-- Tất cả năm học --</option>
+            <option th:each="year : ${years}" th:value="${year}" th:text="${year}"></option>
+        </select>
+
+        <!-- Học kỳ -->
+        <select id="hocKyFilter" class="form-control mr-2">
+            <option value="">-- Tất cả học kỳ --</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">Hè</option>
+        </select>
+
+        <!-- đẩy nút sang bên phải -->
+        <div class="ml-auto d-flex">
+            <button class="btn btn-outline-secondary mr-2" onclick="searchLHP()">Lọc</button>
+        </div>
+    </div>
+
+    <div id="loading" class="loading">Đang tải...</div>
+
+    <!-- Table -->
+    <table class="table table-bordered table-hover">
+        <thead>
+        <tr>
+            <th>MaLHP</th>
+            <th>MaHP</th>
+            <th>TenHP</th>
+            <th>SoTinChi</th>
+            <th>HocKy</th>
+            <th>NamHoc</th>
+            <th>SiSo</th>
+            <th>MaCTDT</th>
+            <th>TenCTDT</th>
+            <th>TenCN</th>
+            <th>TenKhoa</th>
+            <th>TenGiangVien</th>
+        </tr>
+        </thead>
+        <tbody id="lopHocPhanTableBody"></tbody>
+    </table>
+</div>
+
+
+<script th:inline="javascript">
+    const loading = document.getElementById("loading");
+    const tbody = document.getElementById("lopHocPhanTableBody");
+
+    // Load danh sách
+    function searchLHP() {
+        const params = new URLSearchParams({
+            maCTDT: document.getElementById("maCTDTFilter").value,
+            maHP: document.getElementById("maHPFilter").value,
+            namHoc: document.getElementById("namHocFilter").value,
+            hocKy: document.getElementById("hocKyFilter").value
+        });
+
+        loading.style.display = "block";
+        fetch(`/api/lopHocPhan/search?${params.toString()}`)
+            .then(res => res.json())
+            .then(data => {
+                tbody.innerHTML = ""; // xóa cũ
+
+                data.forEach(lhp => {
+                    const tr = document.createElement("tr");
+
+                    // gán sự kiện click cho từng dòng
+                    tr.style.cursor = "pointer"; // đổi chuột để nhìn trực quan hơn
+                    tr.onclick = () => {
+                        window.location.href = `/diem-thi/nhap?maLHP=${lhp["MaLHP"]}`;
+                    };
+                    // Tạo các ô
+                    ["MaLHP","MaHP","TenHP","SoTinChi","HocKy","NamHoc","SiSo",
+                        "MaCTDT","TenCTDT","TenCN","TenKhoa","TenGiangVien"].forEach(key => {
+                        const td = document.createElement("td");
+                        td.textContent = lhp[key] ?? "";
+                        tr.appendChild(td);
+                    });
+
+                    tbody.appendChild(tr);
+                });
+            })
+            .catch(err => alert("Lỗi: " + err.message))
+            .finally(() => { loading.style.display = "none"; });
+    }
+
+
+    function loadHocPhanByCTDT(maCTDT, selectElementId, defaultLabel) {
+        const maHPSelect = document.getElementById(selectElementId);
+        maHPSelect.innerHTML = `<option value="">${defaultLabel}</option>`;
+
+        if (maCTDT) {
+            fetch(`/api/hocPhan/by-ctdt/${maCTDT}`)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(hp => {
+                        const option = document.createElement("option");
+                        option.value = hp.maHP;
+                        option.textContent = hp.tenHP;
+                        maHPSelect.appendChild(option);
+                    });
+                })
+                .catch(err => alert("Lỗi tải học phần: " + err.message));
+        }
+    }
+
+    // Filter section
+    document.getElementById("maCTDTFilter").addEventListener("change", function () {
+        loadHocPhanByCTDT(this.value, "maHPFilter", "-- Tất cả Học phần --");
+    });
+
+    // load danh sách mặc định
+    window.onload = searchLHP;
+</script>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

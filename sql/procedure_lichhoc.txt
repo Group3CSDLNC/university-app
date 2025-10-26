@@ -168,3 +168,93 @@ BEGIN
 END;
 GO
 
+-- Sửa: spThemLichHoc (đóng END trước khi GO, thêm INSERT)
+CREATE OR ALTER PROCEDURE spThemLichHoc
+    @MaLHP BIGINT,
+    @MaPH INT,
+    @TietBatDau INT,
+    @SoTiet INT,
+    @ThuTrongTuan INT,
+    @NgayBatDau DATE,
+    @NgayKetThuc DATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Kiểm tra tồn tại
+    IF NOT EXISTS (SELECT 1 FROM LopHocPhan WHERE MaLHP = @MaLHP)
+    BEGIN
+        THROW 73001, 'Lớp học phần không tồn tại', 1;
+    END;
+
+    IF NOT EXISTS (SELECT 1 FROM PhongHoc WHERE MaPH = @MaPH)
+    BEGIN
+        THROW 73002, 'Phòng học không tồn tại', 1;
+    END;
+
+    DECLARE @SiSo INT, @SucChua INT;
+    SELECT @SiSo = SiSo FROM LopHocPhan WHERE MaLHP = @MaLHP;
+    SELECT @SucChua = SucChua FROM PhongHoc WHERE MaPH = @MaPH;
+
+    IF @SucChua < ISNULL(@SiSo,0)
+    BEGIN
+        THROW 73003, 'Phòng học không đủ sức chứa cho lớp này', 1;
+    END;
+
+    IF @SoTiet % 2 != 0
+    BEGIN
+        THROW 73004, 'Số tiết phải là bội số của 2', 1;
+    END;
+
+    -- Kiểm tra trùng phòng (cùng phòng, cùng thứ, trùng/giao nhau tiết và thời gian)
+    IF EXISTS (
+        SELECT 1 FROM LichHoc
+        WHERE MaPH = @MaPH
+          AND ThuTrongTuan = @ThuTrongTuan
+          AND (
+               (@TietBatDau BETWEEN TietBatDau AND TietBatDau + SoTiet - 1)
+               OR (TietBatDau BETWEEN @TietBatDau AND @TietBatDau + @SoTiet - 1)
+              )
+          AND @NgayBatDau <= NgayKetThuc
+          AND @NgayKetThuc >= NgayBatDau
+    )
+    BEGIN
+        THROW 73005, 'Phòng học có lớp khác trong cùng thời điểm', 1;
+    END;
+
+    -- Nếu qua hết kiểm tra thì INSERT lịch học
+    INSERT INTO LichHoc (MaLHP, TietBatDau, MaPH, SoTiet, ThuTrongTuan, NgayBatDau, NgayKetThuc)
+    VALUES (@MaLHP, @TietBatDau, @MaPH, @SoTiet, @ThuTrongTuan, @NgayBatDau, @NgayKetThuc);
+END;
+GO
+
+-- Sửa: sp_GetLichHocByMaLHP (viết riêng, không nằm trong procedure trước)
+CREATE OR ALTER PROCEDURE sp_GetLichHocByMaLHP
+    @MaLHP BIGINT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM LopHocPhan WHERE MaLHP = @MaLHP)
+    BEGIN
+        THROW 73010, 'Lớp học phần không tồn tại', 1;
+    END;
+
+    SELECT
+        lh.MaLichHoc,
+        lh.MaLHP,
+        lh.TietBatDau,
+        lh.MaPH,
+        ph.SoPhong,
+        ph.SucChua,
+        lh.SoTiet,
+        lh.ThuTrongTuan,
+        lh.NgayBatDau,
+        lh.NgayKetThuc
+    FROM LichHoc lh
+    JOIN PhongHoc ph ON lh.MaPH = ph.MaPH
+    WHERE lh.MaLHP = @MaLHP
+    ORDER BY lh.ThuTrongTuan, lh.TietBatDau;
+END;
+GO
+

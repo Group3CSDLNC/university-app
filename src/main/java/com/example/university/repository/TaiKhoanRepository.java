@@ -1,5 +1,6 @@
 package com.example.university.repository;
 
+import com.example.university.dto.TaiKhoanDTO;
 import com.example.university.model.Khoa;
 import com.example.university.model.TaiKhoan;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,5 +34,28 @@ public class TaiKhoanRepository {
             return null;
         });
     }
-
+    public TaiKhoanDTO getTaiKhoanById(int maTK) {
+        String sql = "EXEC sp_GetTaiKhoanById @MaTK = ?";
+        return jdbcTemplate.query(sql, new Object[]{maTK}, (ResultSet rs) -> {
+            if (rs.next()) {
+                TaiKhoanDTO dto = new TaiKhoanDTO();
+                dto.setMaTK(rs.getInt("MaTK"));
+                dto.setTenDangNhap(rs.getString("TenDangNhap"));
+                dto.setLoaiTaiKhoan(rs.getString("LoaiTaiKhoan"));
+                dto.setMaSV(rs.getObject("MaSV") != null ? rs.getInt("MaSV") : null);
+                dto.setTenSinhVien(rs.getString("TenSinhVien"));
+                dto.setEmailSinhVien(rs.getString("EmailSinhVien"));
+                dto.setNgaySinh(rs.getDate("NgaySinh") != null ? rs.getDate("NgaySinh").toLocalDate() : null);
+                dto.setGioiTinh(rs.getString("GioiTinh"));
+                dto.setChuyenNganh(rs.getString("ChuyenNganh"));
+                dto.setMaNV(rs.getObject("MaNV") != null ? rs.getInt("MaNV") : null);
+                dto.setTenNhanVien(rs.getString("TenNhanVien"));
+                dto.setEmailNhanVien(rs.getString("EmailNhanVien"));
+                dto.setHocVi(rs.getString("HocVi"));
+                dto.setVaiTro(rs.getString("VaiTro"));
+                return dto;
+            }
+            return null;
+        });
+    }
 }
