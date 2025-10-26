@@ -19,9 +19,9 @@ public class BaoCaoRepository {
         );
     }
 
-    public List<Map<String,Object>> getChuaHoanThanh(Long maCTDT) {
+    public List<Map<String,Object>> getChuaHoanThanh(Long maSV, Long maCTDT) {
         return jdbcTemplate.queryForList(
-                "EXEC sp_SinhVienChuaHoanThanhKhoa ?", maCTDT
+                "EXEC sp_SinhVienChuaHoanThanhKhoa ?, ?",maSV, maCTDT
         );
     }
 
@@ -29,8 +29,5 @@ public class BaoCaoRepository {
         return jdbcTemplate.queryForList("EXEC sp_BaoCaoSiSoLop");
     }
 
-    public List<Map<String,Object>> getBaoCaoLichTrung() {
-        return jdbcTemplate.queryForList("EXEC sp_BaoCaoLichHocTrung");
-    }
 
 }

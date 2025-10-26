@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh sách Nhân viên</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+    <style>
+        .search-add-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-input { flex: 1; }
+        .loading { display: none; text-align: center; color: #6c757d; margin-bottom: 10px; }
+        .modal.show { display: block; background: rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+    <a class="navbar-brand" href="#">Hệ thống quản lý</a>
+    <div class="collapse navbar-collapse">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item"><a class="nav-link" href="/dashboard/admin">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link active" href="/nhan-vien/list">Nhân viên</a></li>
+        </ul>
+        <ul class="navbar-nav">
+            <li class="nav-item"><span class="nav-link" th:text="${sessionService.getCurrentUser()?.loaiTaiKhoan} ?: 'Guest'"></span></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2>Danh sách Nhân viên</h2>
+
+    <div class="search-add-group">
+        <input type="text" id="keyword" class="form-control search-input" placeholder="Tìm theo tên hoặc email">
+        <button class="btn btn-outline-secondary" id="searchBtn">Tìm</button>
+        <button th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}"
+                class="btn btn-success" onclick="document.getElementById('addModal').classList.add('show')">Thêm Nhân viên</button>
+    </div>
+
+    <div id="loading" class="loading">Đang tải...</div>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Mã NV</th>
+            <th>Họ tên</th>
+            <th>Học vị</th>
+            <th>Vai trò</th>
+            <th>Email</th>
+            <th th:if="${sessionService.currentUser != null and sessionService.currentUser.loaiTaiKhoan == 'Admin'}">Hành động</th>
+        </tr>
+        </thead>
+        <tbody id="nhanVienTable">
+        <tr th:each="nv : ${nhanVienList}">
+            <td th:text="${nv.MaNV}"></td>
+            <td th:text="${nv.HoTen}"></td>
+            <td th:text="${nv.HocVi}"></td>
+            <td th:text="${nv.VaiTro}"></td>
+            <td th:text="${nv.Email}"></td>
+            <td>
+                <button class="btn btn-warning btn-sm" th:attr="data-id=${nv.MaNV}" onclick="openEditModal(this)">Sửa</button>
+                <button class="btn btn-danger btn-sm" th:attr="data-id=${nv.MaNV}" onclick="deleteNhanVien(this)">Xóa</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal thêm -->
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header"><h5>Thêm Nhân viên</h5></div>
+            <div class="modal-body">
+                <form id="addForm">
+                    <div class="form-group"><label>Họ tên</label><input type="text" id="addHoTen" class="form-control" required></div>
+                    <div class="form-group"><label>Học vị</label><input type="text" id="addHocVi" class="form-control"></div>
+                    <div class="form-group"><label>Vai trò</label><input type="text" id="addVaiTro" class="form-control" required></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="addEmail" class="form-control" required></div>
+                    <div class="form-group">
+                        <label>Nhân viên quản lý</label>
+                        <select id="addQuanLy" class="form-control">
+                            <option value="">-- Không có --</option>
+                            <option th:each="nv : ${nhanVienList}"
+                                    th:value="${nv.MaNV}"
+                                    th:text="${nv.HoTen}"></option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('addModal').classList.remove('show')">Đóng</button>
+                <button class="btn btn-primary" onclick="addNhanVien()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal sửa -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header"><h5>Sửa Nhân viên</h5></div>
+            <div class="modal-body">
+                <form id="editForm">
+                    <input type="hidden" id="editMaNV">
+                    <div class="form-group"><label>Họ tên</label><input type="text" id="editHoTen" class="form-control" required></div>
+                    <div class="form-group"><label>Học vị</label><input type="text" id="editHocVi" class="form-control"></div>
+                    <div class="form-group"><label>Vai trò</label><input type="text" id="editVaiTro" class="form-control" required></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="editEmail" class="form-control" required></div>
+                    <div class="form-group">
+                        <label>Nhân viên quản lý</label>
+                        <select id="editQuanLy" class="form-control">
+                            <option value="">-- Không có --</option>
+                            <option th:each="nv : ${nhanVienList}"
+                                    th:value="${nv.MaNV}"
+                                    th:text="${nv.HoTen}"></option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="document.getElementById('editModal').classList.remove('show')">Đóng</button>
+                <button class="btn btn-primary" onclick="updateNhanVien()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function addNhanVien() {
+        const data = {
+            hoTen: document.getElementById("addHoTen").value,
+            hocVi: document.getElementById("addHocVi").value,
+            vaiTro: document.getElementById("addVaiTro").value,
+            email: document.getElementById("addEmail").value,
+            maNVQuanLy: document.getElementById("addQuanLy").value || null
+        };
+        fetch("/api/nhanVien/add", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(data)
+        }).then(res=>res.text()).then(msg=>{ alert(msg); location.reload(); });
+    }
+
+    function openEditModal(btn) {
+        const id = btn.getAttribute("data-id");
+        fetch(`/api/nhanVien/${id}`).then(res=>res.json()).then(nv=>{
+            document.getElementById("editMaNV").value = nv.maNV;
+            document.getElementById("editHoTen").value = nv.hoTen;
+            document.getElementById("editHocVi").value = nv.hocVi;
+            document.getElementById("editVaiTro").value = nv.vaiTro;
+            document.getElementById("editEmail").value = nv.email;
+            document.getElementById("editQuanLy").value = nv.maNVQuanLy || "";
+            document.getElementById("editModal").classList.add("show");
+        });
+    }
+
+    function updateNhanVien() {
+        const data = {
+            maNV: document.getElementById("editMaNV").value,
+            hoTen: document.getElementById("editHoTen").value,
+            hocVi: document.getElementById("editHocVi").value,
+            vaiTro: document.getElementById("editVaiTro").value,
+            email: document.getElementById("editEmail").value,
+            maNVQuanLy: document.getElementById("editQuanLy").value || null
+        };
+        fetch("/api/nhanVien/update", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body:JSON.stringify(data)
+        }).then(res=>res.text()).then(msg=>{ alert(msg); location.reload(); });
+    }
+
+    function deleteNhanVien(btn) {
+        if(!confirm("Xóa nhân viên này?")) return;
+        const id = btn.getAttribute("data-id");
+        fetch(`/api/nhanVien/delete/${id}`, {method:"DELETE"})
+            .then(res=>res.text()).then(msg=>{ alert(msg); location.reload(); });
+    }
+</script>
+</body>
+</html>

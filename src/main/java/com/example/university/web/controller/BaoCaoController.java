@@ -33,26 +33,21 @@ public class BaoCaoController {
 
     @GetMapping("/bangdiem/{maSV}/{maCTDT}")
     public List<Map<String,Object>> bangDiem(@PathVariable Long maSV, @PathVariable Long maCTDT) {
-        checkLogin();
+//        checkLogin();
         return service.bangDiem(maSV, maCTDT);
     }
 
-    @GetMapping("/chua-hoanthanh/{maCTDT}")
-    public List<Map<String,Object>> chuaHoanThanh(@PathVariable Long maCTDT) {
-        checkLogin();
-        return service.chuaHoanThanh(maCTDT);
+    @GetMapping("/chua-hoanthanh")
+    public List<Map<String,Object>> chuaHoanThanh(@RequestParam String maCTDT,@RequestParam String maSV) {
+        Long maSVLong = (maSV != null && !maSV.isEmpty()) ? Long.valueOf(maSV) : null;
+        Long maCTDTLong = (maCTDT != null && !maCTDT.isEmpty()) ? Long.valueOf(maCTDT) : null;
+        return service.chuaHoanThanh(maSVLong,maCTDTLong);
     }
 
     @GetMapping("/siso")
     public List<Map<String,Object>> baoCaoSiSo() {
         checkLogin();
         return service.baoCaoSiSo();
-    }
-
-    @GetMapping("/lichtrung")
-    public List<Map<String,Object>> getLichTrung() {
-        checkLogin();
-        return service.getLichTrung();
     }
 
     @GetMapping("/ctdt-list")

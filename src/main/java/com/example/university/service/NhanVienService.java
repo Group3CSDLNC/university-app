@@ -1,6 +1,7 @@
 package com.example.university.service;
 
 import com.example.university.dto.LuongGVDTO;
+import com.example.university.dto.NhanVienDTO;
 import com.example.university.model.NhanVien;
 import com.example.university.repository.NhanVienRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,11 +19,11 @@ public class NhanVienService {
 
     public List<NhanVien> findByVaiTro(List<String> vaiTros) { return repo.findByVaiTro(vaiTros); }
 
-    public NhanVien getById(int maNV) { return repo.findById(maNV); }
+    public NhanVienDTO getById(int maNV) { return repo.findById(maNV); }
 
-    public void add(NhanVien nv) { repo.add(nv); }
+    public void add(NhanVienDTO nv) { repo.add(nv); }
 
-    public void update(NhanVien nv) { repo.update(nv); }
+    public void update(NhanVienDTO nv) { repo.update(nv); }
 
     public void delete(int maNV) { repo.delete(maNV); }
 
