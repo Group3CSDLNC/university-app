@@ -3,6 +3,7 @@ package com.example.university.web.controller;
 import com.example.university.service.SessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -13,6 +14,9 @@ public class AdminHomeController {
     private SessionService sessionService;
     @GetMapping("")
     public String dashboard() {
+        if (!sessionService.isLoggedIn()) {
+            return "redirect:/login";
+        }
         // Trang dashboard mặc định, có thể redirect dựa trên role
         String role = sessionService.getCurrentUser().getLoaiTaiKhoan();
         switch (role) {
@@ -30,21 +34,35 @@ public class AdminHomeController {
     }
     @GetMapping("/admin")
     public String dashboardAdmin() {
+        if (!sessionService.isLoggedIn()) {
+            return "redirect:/login";
+        }
         return "dashboard/admin";
     }
 
     @GetMapping("/sinhvien")
-    public String dashboardSinhVien() {
+    public String dashboardSinhVien(Model model) {
+        if (!sessionService.isLoggedIn()) {
+            return "redirect:/login";
+        }
+        model.addAttribute("sessionService", sessionService);
         return "dashboard/sinhvien";
     }
 
     @GetMapping("/nhanvien")
-    public String dashboardNhanVien() {
+    public String dashboardNhanVien(Model model) {
+        if (!sessionService.isLoggedIn()) {
+            return "redirect:/login";
+        }
+        model.addAttribute("sessionService", sessionService);
         return "dashboard/nhanvien";
     }
 
     @GetMapping("/quanly")
     public String dashboardQuanLy() {
+        if (!sessionService.isLoggedIn()) {
+            return "redirect:/login";
+        }
         return "dashboard/quanly";
     }
 }

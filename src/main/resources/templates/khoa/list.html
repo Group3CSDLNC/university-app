@@ -29,7 +29,14 @@
     <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mr-auto">
             <li class="nav-item">
-                <a class="nav-link" href="/dashboard/admin">Dashboard</a>
+<a class="nav-link"
+       th:href="${sessionService.currentUser != null} ?
+                (${sessionService.currentUser.loaiTaiKhoan == 'Admin'} ? '/dashboard/admin' :
+                (${sessionService.currentUser.loaiTaiKhoan == 'SinhVien'} ? '/dashboard/sinhvien' :
+                (${sessionService.currentUser.loaiTaiKhoan == 'NhanVien'} ? '/dashboard/nhanvien' :
+                (${sessionService.currentUser.loaiTaiKhoan == 'QuanLy'} ? '/dashboard/quanly' : '#'))))
+                : '#'"
+    >Dashboard</a>
             </li>
             <li class="nav-item" th:if="${sessionService.currentUser != null and (sessionService.currentUser.loaiTaiKhoan == 'Admin' or sessionService.currentUser.loaiTaiKhoan == 'QuanLy')}">
                 <a class="nav-link" href="/ctdt/list">Chương trình đào tạo</a>
