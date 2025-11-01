@@ -35,21 +35,25 @@ BEGIN
     JOIN KetQuaTongKet kq ON kq.MaSV = sv.MaSV AND kq.MaHP = hp.MaHP
     OUTER APPLY
     (
-        SELECT TOP (1) cd.LanThi,
-                       cd.DiemCC,
-                       cd.DiemGK,
-                       cd.DiemCK
+        SELECT TOP (1)
+            cd.LanThi,
+            cd.DiemCC,
+            cd.DiemGK,
+            cd.DiemCK
         FROM ChiTietDiem cd
         WHERE cd.MaSV = sv.MaSV
           AND cd.MaHP = hp.MaHP
         ORDER BY cd.LanThi DESC
     ) ct
     WHERE
-        (@MaSV IS NULL OR sv.MaSV = @MaSV)          -- lọc theo sinh viên nếu có
-        AND (@MaCTDT IS NULL OR ctdt.MaCTDT = @MaCTDT) -- lọc theo CTDT nếu có
-    ORDER BY sv.MaSV, ctdt.MaCTDT, hp.MaHP;
+        (@MaSV IS NULL OR sv.MaSV = @MaSV)
+        AND (@MaCTDT IS NULL OR ctdt.MaCTDT = @MaCTDT)
+    ORDER BY sv.MaSV, ctdt.MaCTDT, hp.MaHP
+END
+GO   -- <== THÊM DÒNG NÀY
 
-ALTER PROCEDURE [dbo].[sp_SinhVienChuaHoanThanhKhoa]
+
+CREATE OR ALTER PROCEDURE [dbo].[sp_SinhVienChuaHoanThanhKhoa]
     @MaSV   BIGINT = NULL,
     @MaCTDT BIGINT = NULL
 AS
@@ -109,12 +113,15 @@ BEGIN
       AND (kq.TongKet < 5 OR kq.TongKet IS NULL)
     ORDER BY kq.MaSV, kq.MaCTDT, kq.MaHP, kq.LanThi;
 END
+GO   -- <== THÊM DÒNG NÀY
+
 
 CREATE OR ALTER PROCEDURE sp_BaoCaoSiSoLop
 AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Báo cáo sĩ số
     SELECT
         lhp.MaLHP,
         hp.TenHP,
@@ -122,7 +129,7 @@ BEGIN
         lhp.SiSo AS SiSoToiDa,
         ph.SoPhong,
         ph.SucChua,
-        CASE WHEN COUNT(dk.MaSV) > ph.SucChua THEN 'Vuot suc chua' ELSE 'OK' END AS TrangThaiPhong
+        CASE WHEN COUNT(dk.MaSV) > ph.SucChua THEN N'Vượt sức chứa' ELSE N'OK' END AS TrangThaiPhong
     FROM LopHocPhan lhp
     JOIN HocPhan hp ON lhp.MaHP = hp.MaHP
     LEFT JOIN DangKy dk ON dk.MaLHP = lhp.MaLHP
@@ -130,10 +137,31 @@ BEGIN
     LEFT JOIN PhongHoc ph ON lh.MaPH = ph.MaPH
     GROUP BY lhp.MaLHP, hp.TenHP, lhp.SiSo, ph.SoPhong, ph.SucChua;
 
-    -- Lịch trùng
-    SELECT
-        lh1.MaLHP, lh1.Ngay, lh1.MaPH
+    -- Kiểm tra lịch trùng
+    SELECT DISTINCT
+        lh1.MaLHP AS MaLHP1,
+        lh2.MaLHP AS MaLHP2,
+        lh1.MaPH,
+        ph.SoPhong,
+        lh1.ThuTrongTuan,
+        lh1.TietBatDau AS TietBatDau1,
+        lh1.SoTiet AS SoTiet1,
+        lh2.TietBatDau AS TietBatDau2,
+        lh2.SoTiet AS SoTiet2,
+        lh1.NgayBatDau,
+        lh1.NgayKetThuc,
+        lh2.NgayBatDau AS NgayBatDau2,
+        lh2.NgayKetThuc AS NgayKetThuc2
     FROM LichHoc lh1
-    JOIN LichHoc lh2 ON lh1.MaPH = lh2.MaPH AND lh1.Ngay = lh2.Ngay AND lh1.MaLHP <> lh2.MaLHP;
-END;
-
+    JOIN LichHoc lh2
+        ON lh1.MaPH = lh2.MaPH
+        AND lh1.MaLHP <> lh2.MaLHP
+        AND lh1.ThuTrongTuan = lh2.ThuTrongTuan
+        AND lh1.NgayBatDau <= lh2.NgayKetThuc
+        AND lh1.NgayKetThuc >= lh2.NgayBatDau
+        AND (lh1.TietBatDau BETWEEN lh2.TietBatDau AND (lh2.TietBatDau + lh2.SoTiet - 1)
+             OR lh2.TietBatDau BETWEEN lh1.TietBatDau AND (lh1.TietBatDau + lh1.SoTiet - 1))
+    LEFT JOIN PhongHoc ph ON lh1.MaPH = ph.MaPH
+    ORDER BY lh1.MaPH, lh1.ThuTrongTuan, lh1.TietBatDau;
+END
+GO

@@ -11,7 +11,7 @@
     <a class="navbar-brand" href="#">Hệ thống quản lý</a>
     <div class="collapse navbar-collapse">
         <ul class="navbar-nav mr-auto">
-            <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="/dashboard/admin">Home</a></li>
             <li class="nav-item active"><a class="nav-link" href="/bao-cao/list">Báo cáo</a></li>
         </ul>
         <ul class="navbar-nav">
@@ -110,6 +110,32 @@
                 <td th:text="${r['DiemCK']}"></td>
                 <td th:text="${#numbers.formatDecimal(r['TongKet'], 0, 2, 'POINT')}"></td>
                 <td th:text="${r['TrangThai']}"></td>
+            </tr>
+            </tbody>
+        </table>
+
+        <!-- Báo cáo sĩ số -->
+        <table class="table table-bordered table-sm" th:if="${reportType == 'siso'}">
+            <thead class="thead-light">
+            <tr>
+                <th>Mã LHP</th>
+                <th>Tên học phần</th>
+                <th>Sĩ số thực tế</th>
+                <th>Sĩ số tối đa</th>
+                <th>Số phòng</th>
+                <th>Sức chứa</th>
+                <th>Trạng thái phòng</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${reportData}">
+                <td th:text="${r['MaLHP']}"></td>
+                <td th:text="${r['TenHP']}"></td>
+                <td th:text="${r['SiSoThucTe']}"></td>
+                <td th:text="${r['SiSoToiDa']}"></td>
+                <td th:text="${r['SoPhong']} ?: '-'"></td>
+                <td th:text="${r['SucChua']} ?: '-'"></td>
+                <td th:text="${r['TrangThaiPhong']}"></td>
             </tr>
             </tbody>
         </table>

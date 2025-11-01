@@ -33,7 +33,7 @@ public class BaoCaoController {
 
     @GetMapping("/bangdiem/{maSV}/{maCTDT}")
     public List<Map<String,Object>> bangDiem(@PathVariable Long maSV, @PathVariable Long maCTDT) {
-//        checkLogin();
+        checkLogin();
         return service.bangDiem(maSV, maCTDT);
     }
 
@@ -46,7 +46,7 @@ public class BaoCaoController {
 
     @GetMapping("/siso")
     public List<Map<String,Object>> baoCaoSiSo() {
-        checkLogin();
+//        checkLogin();
         return service.baoCaoSiSo();
     }
 
