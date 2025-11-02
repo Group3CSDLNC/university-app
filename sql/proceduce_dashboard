@@ -1,0 +1,101 @@
+USE [QuanLyTrungTamDaoTaoP];
+GO
+
+/* ============================================================
+   1️⃣ Thủ tục tổng hợp cho ADMIN DASHBOARD
+   ============================================================ */
+CREATE OR ALTER PROCEDURE sp_dashboard_admin_summary
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        (SELECT COUNT(*) FROM SinhVien) AS tong_sinh_vien,
+        (SELECT COUNT(*) FROM NhanVien) AS tong_nhan_vien,
+        (SELECT COUNT(*) FROM NhanVien WHERE VaiTro = N'Giang vien') AS tong_giang_vien,
+        (SELECT COUNT(*) FROM Khoa) AS tong_khoa;
+END;
+GO
+
+/* ============================================================
+   2️⃣ Thủ tục tổng hợp cho GIẢNG VIÊN DASHBOARD
+   ============================================================ */
+CREATE OR ALTER PROCEDURE sp_dashboard_giang_vien_summary
+    @MaGV INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @HocKy INT;
+    DECLARE @NamHoc VARCHAR(9);
+
+    -- ✅ Lấy học kỳ và năm học hiện tại (theo bản ghi mới nhất trong LopHocPhan)
+    SELECT TOP 1
+        @HocKy = HocKy,
+        @NamHoc = NamHoc
+    FROM LopHocPhan
+    ORDER BY NamHoc DESC, HocKy DESC;
+
+    -- ✅ Số môn giảng dạy (distinct MaHP)
+    DECLARE @SoMonGiangDay INT = (
+        SELECT COUNT(DISTINCT lhp.MaHP)
+        FROM GiangDay gd
+                 JOIN LopHocPhan lhp ON gd.MaLHP = lhp.MaLHP
+        WHERE gd.MaGV = @MaGV
+          AND lhp.HocKy = @HocKy
+          AND lhp.NamHoc = @NamHoc
+    );
+
+    -- ✅ Tổng số sinh viên trong các lớp giảng viên dạy
+    DECLARE @TongSinhVien INT = (
+        SELECT COUNT(DISTINCT dk.MaSV)
+        FROM GiangDay gd
+                 JOIN LopHocPhan lhp ON gd.MaLHP = lhp.MaLHP
+                 JOIN DangKy dk ON lhp.MaLHP = dk.MaLHP
+        WHERE gd.MaGV = @MaGV
+          AND lhp.HocKy = @HocKy
+          AND lhp.NamHoc = @NamHoc
+    );
+
+    -- ✅ Trả về kết quả
+    SELECT
+        @HocKy AS hoc_ky_hien_tai,
+        @NamHoc AS nam_hoc_hien_tai,
+        ISNULL(@SoMonGiangDay, 0) AS so_mon_giang_day,
+        ISNULL(@TongSinhVien, 0) AS tong_sinh_vien;
+END;
+GO
+
+/* ============================================================
+   3️⃣ VIEW tổng hợp thông tin cho SINH VIÊN DASHBOARD
+   ============================================================ */
+CREATE OR ALTER VIEW v_SinhVienDashboardSummary
+AS
+SELECT
+    sv.MaSV,
+    sv.HoTen AS TenSV,
+    cn.MaCN,
+    cn.TenCN,
+    COUNT(DISTINCT kq.MaHP) AS SoMonHoc,          -- Tổng số môn đã học
+    ROUND(AVG(kq.TongKet), 2) AS DiemTrungBinh,  -- Điểm trung bình chung
+    MAX(ct.TongTinChi) AS TongTinChiYeuCau,
+    SUM(CASE WHEN kq.TongKet >= 5 THEN hp.SoTinChi ELSE 0 END) AS TongTinChiTichLuy,
+    CASE
+        WHEN ROUND(AVG(kq.TongKet), 2) >= 8.5 THEN N'Xuất sắc'
+        WHEN ROUND(AVG(kq.TongKet), 2) >= 7.0 THEN N'Giỏi'
+        WHEN ROUND(AVG(kq.TongKet), 2) >= 5.5 THEN N'Khá'
+        WHEN ROUND(AVG(kq.TongKet), 2) >= 4.0 THEN N'Trung bình'
+        ELSE N'Yếu'
+        END AS XepLoai,
+    CASE
+        WHEN SUM(CASE WHEN kq.TongKet >= 5 THEN hp.SoTinChi ELSE 0 END) >= MAX(ct.TongTinChi)
+            THEN N'Đủ điều kiện tốt nghiệp'
+        ELSE N'Chưa đủ điều kiện tốt nghiệp'
+        END AS TrangThai
+FROM KetQuaTongKet kq
+         JOIN SinhVien sv ON kq.MaSV = sv.MaSV
+         JOIN HocPhan hp ON kq.MaHP = hp.MaHP
+         JOIN ChuongTrinhDaoTao ct ON sv.MaCN = ct.MaCN
+         JOIN ChuyenNganh cn ON sv.MaCN = cn.MaCN
+GROUP BY sv.MaSV, sv.HoTen, cn.MaCN, cn.TenCN;
+GO

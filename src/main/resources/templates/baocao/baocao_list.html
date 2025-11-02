@@ -11,7 +11,14 @@
     <a class="navbar-brand" href="#">Hệ thống quản lý</a>
     <div class="collapse navbar-collapse">
         <ul class="navbar-nav mr-auto">
-            <li class="nav-item"><a class="nav-link" href="/dashboard/admin">Home</a></li>
+            <a class="nav-link"
+               th:href="${sessionService.currentUser != null} ?
+                (${sessionService.currentUser.loaiTaiKhoan == 'Admin'} ? '/dashboard/admin' :
+                (${sessionService.currentUser.loaiTaiKhoan == 'SinhVien'} ? '/dashboard/sinhvien' :
+                (${sessionService.currentUser.loaiTaiKhoan == 'NhanVien'} ? '/dashboard/nhanvien' :
+                (${sessionService.currentUser.loaiTaiKhoan == 'QuanLy'} ? '/dashboard/quanly' : '#'))))
+                : '#'"
+            >Dashboard</a>
             <li class="nav-item active"><a class="nav-link" href="/bao-cao/list">Báo cáo</a></li>
         </ul>
         <ul class="navbar-nav">
